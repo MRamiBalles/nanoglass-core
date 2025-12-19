@@ -10,21 +10,22 @@ interface LogEntry {
 }
 
 const initialLogs: LogEntry[] = [
-  { id: 1, timestamp: "10:41:58", message: "System initialized. Glass Box Interpreter v1.0", type: "info" },
-  { id: 2, timestamp: "10:42:01", message: 'Input: "What is 2+2?" -> Output: "4" (Low Energy: 0.12)', type: "success" },
-  { id: 3, timestamp: "10:42:05", message: 'Input: "Meaning of life?" -> [IDK] TOKEN TRIGGERED (Abstention)', type: "warning" },
-  { id: 4, timestamp: "10:42:15", message: "HALLUCINATION BLOCKED by TruthRL. Energy spike prevented.", type: "error" },
-  { id: 5, timestamp: "10:42:22", message: 'Input: "Capital of France?" -> Output: "Paris" (Low Energy: 0.08)', type: "success" },
-  { id: 6, timestamp: "10:42:30", message: "Sparse Autoencoder: Feature extraction complete. 847 active features.", type: "info" },
-  { id: 7, timestamp: "10:42:45", message: 'Input: "Explain quantum entanglement" -> Processing...', type: "info" },
+  { id: 1, timestamp: "10:41:58", message: "Cortex-13 Architecture initialized. Hybrid Mode: ON", type: "info" },
+  { id: 2, timestamp: "10:42:01", message: 'Loading "Electric Gravity" modules... [OK]', type: "success" },
+  { id: 3, timestamp: "10:42:05", message: 'Mamba State Compression: 94.2% (Linear Scan Active)', type: "info" },
+  { id: 4, timestamp: "10:42:15", message: "HALLUCINATION DETECTED. TruthRL Intervention applied.", type: "error" },
+  { id: 5, timestamp: "10:42:22", message: 'Concept "Freedom" crystallized at Layer 4 (L0=32)', type: "success" },
+  { id: 6, timestamp: "10:42:30", message: "Neurogenesis: Pruning senescent weights in Block 2...", type: "warning" },
+  { id: 7, timestamp: "10:42:45", message: 'Glass Box Probe: Attention Heatmap captured.', type: "info" },
 ];
 
 const newLogMessages = [
-  { message: "Entropy fluctuation detected. Recalibrating...", type: "warning" as const },
-  { message: "MoE Router: Expert 3 selected (P=0.87)", type: "info" as const },
-  { message: 'Input: "Solve x^2 = 4" -> Output: "x = ±2" (Low Energy: 0.15)', type: "success" as const },
-  { message: "Gradient checkpoint saved. State synchronized.", type: "info" as const },
-  { message: "UNCERTAIN_TOKEN probability exceeded threshold (0.73)", type: "warning" as const },
+  { message: "Thermodynamic Free Energy minimized (dH < 0.01)", type: "success" as const },
+  { message: "MoE Router: Expert #2 (Logic) selected for token 'therefore'", type: "info" as const },
+  { message: "Plasticity Critical Window closing... targeted noise injection.", type: "warning" as const },
+  { message: "Sparsity Transition: L0 drops to 28. Logic gate formed.", type: "success" as const },
+  { message: "Recursive Self-Model updated. Identity verified.", type: "info" as const },
+  { message: "Entropic Decay detected in long-term memory. Replaying dreams...", type: "warning" as const },
 ];
 
 const typeColors = {
@@ -35,7 +36,7 @@ const typeColors = {
 };
 
 const typePrefixes = {
-  info: "[INFO]",
+  info: "[CTX-13]",
   success: "[OK]",
   warning: "[WARN]",
   error: "[ALERT]",
@@ -49,9 +50,9 @@ export function LogTerminal() {
     const interval = setInterval(() => {
       const now = new Date();
       const timestamp = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}:${now.getSeconds().toString().padStart(2, "0")}`;
-      
+
       const newLog = newLogMessages[currentLogIndex % newLogMessages.length];
-      
+
       setLogs((prev) => [
         ...prev.slice(-10),
         {
@@ -60,9 +61,9 @@ export function LogTerminal() {
           ...newLog,
         },
       ]);
-      
+
       setCurrentLogIndex((prev) => prev + 1);
-    }, 4000);
+    }, 3500);
 
     return () => clearInterval(interval);
   }, [currentLogIndex]);
@@ -77,7 +78,7 @@ export function LogTerminal() {
       <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border/30">
         <Terminal className="w-4 h-4 text-neon-cyan" />
         <h3 className="font-mono text-sm text-muted-foreground uppercase tracking-wider">
-          Live Terminal
+          Cortex-13 Kernel
         </h3>
         <div className="ml-auto flex gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-neon-red/60" />

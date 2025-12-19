@@ -6,6 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import Dashboard from "./pages/Dashboard";
 import ResearchHub from "./pages/ResearchHub";
+import BioLab from "./pages/labs/BioLab";
+import PhysicsLab from "./pages/labs/PhysicsLab";
+import XenoLab from "./pages/labs/XenoLab";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,6 +23,9 @@ const App = () => (
           <Route element={<MainLayout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/research" element={<ResearchHub />} />
+            <Route path="/labs/bio" element={<BioLab />} />
+            <Route path="/labs/physics" element={<PhysicsLab />} />
+            <Route path="/labs/xeno" element={<XenoLab />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

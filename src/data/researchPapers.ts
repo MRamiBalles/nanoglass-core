@@ -1,6 +1,49 @@
 import { ResearchPaper } from "@/components/research/ResearchCard";
 
 export const researchPapers: ResearchPaper[] = [
+  // --- ELECTRIC GRAVITY LABS (INTERNAL RESEARCH) ---
+  {
+    id: "eg-00",
+    title: "Glass Box Architectures: The Ontogeny of Symbolic Reasoning",
+    authors: "Manu & Antigravity AI",
+    category: "Electric Gravity",
+    year: 2025,
+    status: "verified",
+    summary: "PhD Thesis. Proposes a 'Glass Box' framework using Hybrid Cortex-13 (Mamba+Transformer+MoE). Demonstrates symbolic logic as an emergent phenomenon of information compression (RLHF-induced sparsity).",
+    focus: "Cortex-13, Hybrid Architectures, Sparsity Transition",
+  },
+  {
+    id: "eg-01",
+    title: "Do Mambas Dream of Electric Sheep? Universality of Symbolic Crystalization",
+    authors: "Antigravity Research Lab",
+    category: "Universality",
+    year: 2025,
+    status: "verified",
+    summary: "Investigates the 'Phase Transition' to symbolic reasoning across architectures. Finds evidence of 'Convergent Evolution' between Transformers and State Space Models under RLHF pressure.",
+    focus: "Mamba, Convergent Evolution, Concept Basins",
+  },
+  {
+    id: "eg-02",
+    title: "The Physics of Truth: L1 Sparsity and the Information Bottleneck",
+    authors: "Antigravity Research Lab",
+    category: "Thermodynamics",
+    year: 2045,
+    status: "theory",
+    summary: "Extends the Information Bottleneck principle to the 'Thermodynamics of Meaning'. Defines a 'Neural Hamiltonian' where Truth is the Minimum Free Energy state characterized by maximum L1 sparsity.",
+    focus: "Neural Hamiltonian, Free Energy, L1 Sparsity",
+  },
+  {
+    id: "eg-03",
+    title: "The Fountain of Youth: Reversing Loss of Plasticity",
+    authors: "Antigravity Research Lab",
+    category: "Neurogenesis",
+    year: 2025,
+    status: "verified",
+    summary: "Addresses 'Loss of Plasticity' (LoP) in LLMs. Proposes 'Targeted Neurogenesis' to re-initialize 'senescent' weights with Gaussian noise, re-opening the critical learning window.",
+    focus: "Loss of Plasticity, Neurogenesis, Critical Window",
+  },
+  
+  // --- EXTERNAL REFERENCES ---
   {
     id: "1",
     title: "GemmaScope: Comprehensive Sparse Autoencoder Features for Gemma",

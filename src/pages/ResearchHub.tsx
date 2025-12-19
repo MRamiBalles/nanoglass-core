@@ -1,26 +1,36 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, Filter, Search } from "lucide-react";
 import { useState } from "react";
 import { ResearchCard } from "@/components/research/ResearchCard";
 import { researchPapers } from "@/data/researchPapers";
+import { PaperReader } from "@/components/research/PaperReader";
 
-const categories = ["All", "Interpretability", "Mechanistic", "Consciousness", "Thermodynamics", "Philosophy of Mind", "Information Theory"];
+const categories = ["All", "Electric Gravity", "Universality", "Thermodynamics", "Neurogenesis", "Interpretability", "Mechanistic", "Consciousness", "Philosophy of Mind"];
 
 export default function ResearchHub() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPaper, setSelectedPaper] = useState<string | null>(null);
 
   const filteredPapers = researchPapers.filter((paper) => {
     const matchesCategory = selectedCategory === "All" || paper.category === selectedCategory;
-    const matchesSearch = 
+    const matchesSearch =
       paper.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       paper.authors.toLowerCase().includes(searchQuery.toLowerCase()) ||
       paper.summary.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
+  const activePaper = researchPapers.find(p => p.id === selectedPaper);
+
   return (
-    <div className="p-8">
+    <div className="p-8 relative">
+      <AnimatePresence>
+        {activePaper && (
+          <PaperReader paper={activePaper} onClose={() => setSelectedPaper(null)} />
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
@@ -70,7 +80,7 @@ export default function ResearchHub() {
                 key={category}
                 onClick={() => setSelectedCategory(category)}
                 className={`
-                  px-3 py-1.5 rounded-lg font-mono text-xs transition-all
+                  px-3 py-1.5 rounded-lg font-mono text-xs transition-all whitespace-nowrap
                   ${selectedCategory === category
                     ? "bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30"
                     : "bg-background/50 text-muted-foreground border border-border hover:border-neon-cyan/20 hover:text-foreground"
@@ -87,7 +97,9 @@ export default function ResearchHub() {
       {/* Papers Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filteredPapers.map((paper, index) => (
-          <ResearchCard key={paper.id} paper={paper} index={index} />
+          <div key={paper.id} onClick={() => setSelectedPaper(paper.id)} className="cursor-pointer">
+            <ResearchCard paper={paper} index={index} />
+          </div>
         ))}
       </div>
 

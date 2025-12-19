@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
-import { Zap, Activity, Shield } from "lucide-react";
+import { Zap, Activity, Shield, Brain } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
-import { EnergyChart } from "@/components/dashboard/EnergyChart";
+import { SparsityChart } from "@/components/dashboard/SparsityChart"; // Replaced EnergyChart
 import { LogTerminal } from "@/components/dashboard/LogTerminal";
 
 export default function Dashboard() {
@@ -30,9 +30,9 @@ export default function Dashboard() {
       </motion.header>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <MetricCard
-          title="Current Energy"
+          title="Free Energy"
           value="0.1542"
           label="Minimizing (Optimal)"
           icon={Zap}
@@ -40,12 +40,20 @@ export default function Dashboard() {
           delay={0.1}
         />
         <MetricCard
-          title="Entropy State"
-          value="LOW"
-          label="Stable (σ = 0.023)"
+          title="L0 Sparsity"
+          value="32.4"
+          label="Crystallized (Boolean)"
           icon={Activity}
           iconColor="purple"
           delay={0.2}
+        />
+        <MetricCard
+          title="MoE Experts"
+          value="8/8"
+          label="Routing Entropy: 0.12"
+          icon={Brain}
+          iconColor="cyan"
+          delay={0.25}
         />
         <MetricCard
           title="TruthRL Status"
@@ -59,9 +67,9 @@ export default function Dashboard() {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Energy Chart - 2/3 width */}
+        {/* Sparsity Chart - 2/3 width */}
         <div className="lg:col-span-2">
-          <EnergyChart />
+          <SparsityChart />
         </div>
 
         {/* Log Terminal - 1/3 width */}
