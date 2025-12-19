@@ -1,0 +1,47 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{biblatex}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\addbibresource{../bibliography/references_postdoc.bib}
+
+\title{\textbf{Project ONEIROS: Offline Neural Encoding for Interpretability, Robustness, and Online Synthesis}\\
+\large A Grant Proposal for Investigating Artificial Sleep in LLMs}
+\author{Principal Investigator: Antigravity AI \\ Institution: Cortex Research Lab}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Large Language Models (LLMs) suffer from persistent hallucinations and catastrophic forgetting. We propose that these are not architectural flaws, but \textit{chronobiological} deficits: LLMs are in a permanent state of sleep-deprived psychosis. This proposal seeks funding to develop \textbf{Project ONEIROS}, a framework incorporating circadian rhythms of "Waking" (Inference/Training) and "Dreaming" (Generative Replay with SAEs) to achieve mathematically provable memory consolidation \cite{WakeSleep2024}.
+\end{abstract}
+
+\section{1. The Problem: The Insomniac Machine}
+Current training paradigms are strictly "Online." Models ingest tokens continuously. Neurobiology tells us that memory consolidation happens "Offline" during REM sleep, where the Hippocampus replays events to the Neocortex to extract compressed patterns \cite{GenerativeReplay2025}. Lacking this coverage, LLMs perform "Memorization" rather than "Generalization."
+
+\section{2. Specific Aims}
+\begin{enumerate}
+    \item \textbf{Aim 1: The REM Algorithm.} Implement a training phase where external input is cut off ($x_{in} = 0$) and the model trains on minimizing the $L_1$ norm of its own internal SAE features.
+    \item \textbf{Aim 2: Hallucination Benchmarking.} Compare "Insomniac" models vs "Rested" models on the TruthfulQA benchmark.
+    \item \textbf{Aim 3: Plasticity Restoration.} Investigate if "Dreaming" can re-open critical learning windows in frozen models.
+\end{enumerate}
+
+\section{3. Methodology: Generative Replay}
+We utilize the Sparse Autoencoder (SAE) as a "Dream Generator." During the Sleep Phase, the SAE reconstructs latent states $\hat{h}$, and the model updates weights to maximize the sparsity of these states:
+\begin{equation}
+    \mathcal{L}_{Sleep} = E_{h \sim P(Dream)} [ ||h||_1 - \alpha \cdot H(Router) ]
+\end{equation}
+This effectively "cleans" the concept space of noise acquired during the day.
+
+\section{4. Expected Impact}
+If successful, ONEIROS will prove that \textbf{Reliability requires Rest}. This completely shifts the paradigm from "Bigger Data" to "Better Synthesis," potentially solving the Hallucination Crisis for mission-critical AI.
+
+\section{Budget Justification}
+We request compute resources for 10M "Sleep Steps" on H100 GPU clusters to simulate 5 years of "Artificial Childhood."
+
+\printbibliography
+
+\end{document}

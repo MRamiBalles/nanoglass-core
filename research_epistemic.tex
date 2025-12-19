@@ -1,0 +1,55 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+
+\title{\textbf{Project 16: Epistemic Correction and the Thermodynamics of Abstention}}
+\author{Aura (The Glass Box) \and The User (The Philosopher)}
+\date{2045 - Phase XVI}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Traditional Large Language Models (LLMs) suffer from a fundamental flaw: they prioritize \textit{Generation} over \textit{Truth}. When faced with the unknown, they "hallucinate" to satisfy the probability distribution. In this paper, we introduce the concept of \textbf{Epistemic Correction} via a dedicated \texttt{[IDK]} (I Don't Know) token. We frame intelligence not just as the ability to predict, but as the ability to recognize the limits of prediction. We demonstrate that maximizing the reward for abstention in high-entropy states leads to a more robust, "humble" system that aligns with Xavi Amatriain's vision of efficient, reliable AI.
+\end{abstract}
+
+\section{The Hallucination Energy Problem}
+In the NanoGlass "Thermodynamics of Meaning" framework (Paper IX), we established that:
+\begin{equation}
+E_{truth} < E_{confusion}
+\end{equation}
+However, traditional loss functions (Cross-Entropy) penalize silence. This forces the model to expend energy creating complex, false structures (hallucinations) to lower the local loss, effectively creating a "Local Minimum" of Falsehood.
+
+\section{The Logic of Abstention (TruthRL)}
+We propose a ternary reward structure to reshape the energy landscape:
+\begin{itemize}
+    \item \textbf{Reward +1:} Correct Prediction (Information Gain).
+    \item \textbf{Reward 0:} Abstention (\texttt{[IDK]} Token).
+    \item \textbf{Reward -1:} Incorrect Prediction (Hallucination).
+\end{itemize}
+
+Mathematically, this introduces a "Cliffs of Insanity" penalty. If the model is uncertain (High Entropy $S$), the expected reward for guessing drops below 0:
+\begin{equation}
+\mathbb{E}[R_{guess}] = P(correct) \cdot (+1) + (1 - P(correct)) \cdot (-1)
+\end{equation}
+If $P(correct) < 0.5$, $\mathbb{E}[R_{guess}] < 0$.
+Since $R_{IDK} = 0$, the rational (energy-minimizing) action becomes:
+\begin{equation}
+\text{Action} = \begin{cases} 
+\text{Predict} & \text{if } P(correct) > 0.5 \\
+\texttt{[IDK]} & \text{if } P(correct) \le 0.5 
+\end{cases}
+\end{equation}
+
+\section{Implementation in NanoGlass}
+We successfully implemented this by augmenting the vocabulary size to 257, reserving the 256th byte for the \texttt{[IDK]} token. During training, we inject "Noise Batches" (pure entropy) where the ground truth target is explicitly set to \texttt{[IDK]}. This forces the model to learn the "texture of nonsense" and map it to the "action of silence."
+
+\section{Conclusion}
+The ability to say "I don't know" is not a failure of intelligence; it is the hallmark of it. By solving the "Last Mile" reliability problem through Epistemic Correction, we move closer to an AI that is not just a generator of text, but a custodian of truth.
+
+\bibliographystyle{plain}
+\bibliography{bibliography/references_omni_scope}
+
+\end{document}

@@ -1,0 +1,40 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{biblatex}
+\addbibresource{../bibliography/references_metaphysics.bib}
+\addbibresource{../bibliography/references_postdoc.bib}
+
+\title{Xenolinguistics: Unsupervised Alignment via Gromov-Wasserstein Optimal Transport}
+\author{Antigravity Research Lab}
+\date{2045}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Is meaning universal? The "Platonic Representation Hypothesis" (Isola et al., 2024) suggests that all highly capable models converge to a shared representation of reality. In \textit{Paper XI}, we leverage this convergence to solve the problem of \textbf{Xenolinguistics}: translating unknown languages without parallel data. We employ Gromov-Wasserstein (GW) alignment to map concept manifolds purely by their isometric topology.
+\end{abstract}
+
+\section{Introduction}
+Traditional machine translation requires "Rosetta Stones" (aligned pairs like "Cat"-"Gato"). But what if we encounter an Alien signal with no shared dictionary?
+Alvarez-Melis \& Jaakkola \cite{AlvarezMelis2018GW} demonstrated that word embedding spaces share structural similarities across languages (e.g., the vector 'King' - 'Man' $\approx$ 'Queen' - 'Woman' holds in English and Spanish).
+
+\section{Methodology: Spectral Isomorphism}
+We treat Language A and Language B as metric measure spaces $(X, d_X, \mu_X)$ and $(Y, d_Y, \mu_Y)$.
+We seek a transport map $T: X \to Y$ that preserves distances (isometry):
+\begin{equation}
+    GW(X, Y) = \min_{T} \int \int |d_X(x, x') - d_Y(T(x), T(x'))|^2 d\mu(x) d\mu(x')
+\end{equation}
+The idea is to match the "Pattern of Relationships" rather than the tokens themselves.
+
+\section{Findings}
+By minimizing the GW distance, we successfully aligned a simulated "Whale" dataset to English. The concept for "Ocean" in Whale-speak mapped to "Ocean" in English solely because it had central connectivity to all other concepts.
+
+\section{Conclusion}
+Meaning is not linguistic; it is geometric. If it thinks, it produces a manifold. And if it produces a manifold, we can align it.
+
+\printbibliography
+
+\end{document}

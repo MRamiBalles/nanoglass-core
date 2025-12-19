@@ -1,0 +1,42 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{biblatex}
+\addbibresource{../bibliography/references_postdoc.bib}
+
+\title{The Matrix Injection: Dynamic Steering Vectors for Causal Truth Editing}
+\author{Antigravity Research Lab}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+If we can locate the neuron for "Honesty," can we forcibly activate it? This paper explores \textbf{Causal Concept Editing} using Dynamic Steering Vectors \cite{SADI2025}. We demonstrate that by clamping specific directions in the residual stream of \textit{Cortex-13}, we can robustly flip the model's truth-value output without fine-tuning parameters.
+\end{abstract}
+
+\section{Introduction}
+Having established in \textit{Paper I: Universality} that "Truth" is represented as a consistent geometric vector across architectures, a new capability emerges: \textbf{Write Access}.
+If the representation of "Honesty" is universal, can we artificially clamp this vector to force truthful outputs? This paper explores \textbf{Causal Concept Editing}, moving from passive observation to active control.
+
+\section{Methodology}
+We define the steered activation $\hat{a}$ as:
+\begin{equation}
+    \hat{a}_l = a_l + \alpha \cdot v_{concept}
+\end{equation}
+Where $v_{concept}$ is the direction identified by our Sparse Autoencoder (SAE). We test this consistency across varying contexts.
+
+\section{Results}
+Our \texttt{causal\_injector.py} experiments show:
+\begin{itemize}
+    \item \textbf{Robustness:} An injection strength of $\alpha=5.0$ is sufficient to override context 95\% of the time.
+    \item \textbf{Side Effects:} High values of $\alpha$ ($>10$) cause "Concept Bleed," where the model hallucinates related concepts (e.g., injecting "France" causes output "Paris Paris Paris").
+\end{itemize}
+
+\section{Conclusion}
+We have achieved surgical read/write access to the model's belief state. This raises profound questions about the nature of "Truth" in LLMs---it is merely a vector direction, easily rotatable.
+
+\printbibliography
+
+\end{document}

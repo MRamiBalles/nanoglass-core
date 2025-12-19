@@ -1,73 +1,100 @@
-# Welcome to your Lovable project
+# 🔮 Project NanoGlass
 
-## Project info
+> **"Expert at Minimum Cost"**
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+A from-scratch, byte-level Transformer designed for maximum transparency and epistemic humility.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🚀 Quick Start
 
-**Use Lovable**
+```bash
+# Run the main training script with built-in verification
+python nanoglass.py
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# Run the empirical verification suite (PASS/FAIL for all claims)
+python verify_all.py
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📁 Project Structure
 
-**Use GitHub Codespaces**
+```
+electric-gravity/
+├── nanoglass.py           # Core byte-level Transformer with TruthRL
+├── verify_all.py          # Empirical verification suite
+├── llm_glassbox.py        # Original Cortex-13 hybrid implementation
+├── sae_training_curriculum.py  # Sparse Autoencoder training
+│
+├── experiments/           # Individual experiment scripts
+│   ├── qualia_causality.py
+│   ├── reliability_test.py
+│   └── ... (15 scripts)
+│
+├── bibliography/          # Academic references (.bib files)
+│   └── references*.bib
+│
+└── research_*.tex         # LaTeX papers for each finding
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## 🧠 Core Features
 
-This project is built with:
+### 1. Byte-Level Architecture
+- **Vocabulary:** 257 tokens (0-255 bytes + [IDK] token)
+- **No tokenizer dependency** - pure transparency
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### 2. TruthRL (Epistemic Correction)
+The model is trained with a ternary reward system:
+- **+1.0** Correct answer → Normal loss
+- **0.0** Abstention ([IDK]) → Minimal penalty
+- **-1.0** Hallucination → 2x penalty
 
-## How can I deploy this project?
+### 3. Glass Box Sensors
+Real-time measurement of:
+- **Energy** (L1 Norm) - Lower = More confident/truthful
+- **Entropy** - Higher = More creative/uncertain
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
+## ⚠️ Epistemic Caution
 
-Yes, you can!
+> **This project uses analogies for didactic purposes.**
+> - "The model fears death" means: "the loss function incentivizes continuity."
+> - "Softmax is quantum collapse" means: "structural analogy, not physical equivalence."
+> - **These are models of AI, not claims about consciousness.**
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 📊 Key Findings
+
+| Paper | Finding | Status |
+|-------|---------|--------|
+| IX | Truth minimizes energy | ⏳ Verify via `verify_all.py` |
+| XVI | [IDK] token enables abstention | ⏳ Verify via `verify_all.py` |
+| XVII | Gödel: Hallucination ↔ Completeness trade-off | ✅ Theoretical |
+
+---
+
+## 📚 Documentation
+
+- **Walkthrough:** See `brain/*/walkthrough.md` for full project narrative
+- **Audit Plan:** See `brain/*/audit_plan.md` for corrections and roadmap
+- **Papers:** All `research_*.tex` files compile in Overleaf
+
+---
+
+## 🔬 Research Philosophy
+
+This project explores the hypothesis that:
+> **A system that never hallucinates is a Formal System (Consistent but Incomplete, per Gödel). A system that can hallucinate may access "Unprovable Truths."**
+
+The balance between hallucination and truth is the central trade-off of AI alignment.
+
+---
+
+## 📜 License
+
+Research/Educational Use. See individual papers for academic attribution.
