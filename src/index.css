@@ -2,95 +2,76 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/700.css";
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
+    /* Ultra Dark Mode - Slate 950 Base */
+    --background: 222 47% 4%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    /* Card/Panel - Glassmorphism */
+    --card: 217 33% 8%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 217 33% 8%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Neon Cyan - Truth/Energy */
+    --primary: 187 92% 53%;
+    --primary-foreground: 222 47% 4%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    /* Neon Purple - Entropy/Uncertainty */
+    --secondary: 270 91% 75%;
+    --secondary-foreground: 222 47% 4%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    /* Muted - Subtle UI */
+    --muted: 217 33% 12%;
+    --muted-foreground: 215 20% 55%;
 
-    --accent: 217.2 32.6% 17.5%;
+    /* Accent - Glassmorphism highlights */
+    --accent: 217 33% 15%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    /* Alert States */
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Borders - Subtle glows */
+    --border: 217 33% 18%;
+    --input: 217 33% 15%;
+    --ring: 187 92% 53%;
+
+    --radius: 0.75rem;
+
+    /* Custom NanoGlass tokens */
+    --neon-cyan: 187 92% 53%;
+    --neon-purple: 270 91% 75%;
+    --neon-green: 142 76% 45%;
+    --neon-yellow: 45 93% 47%;
+    --neon-red: 0 84% 60%;
+    
+    /* Glassmorphism */
+    --glass-bg: 217 33% 8% / 0.6;
+    --glass-border: 187 92% 53% / 0.15;
+    --glass-glow: 187 92% 53% / 0.1;
+    
+    /* Gradients */
+    --gradient-cyber: linear-gradient(135deg, hsl(187 92% 53% / 0.2), hsl(270 91% 75% / 0.2));
+    --gradient-energy: linear-gradient(180deg, hsl(187 92% 53% / 0.3), transparent);
+    --gradient-entropy: linear-gradient(180deg, hsl(270 91% 75% / 0.3), transparent);
+
+    /* Sidebar */
+    --sidebar-background: 222 47% 5%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 187 92% 53%;
+    --sidebar-primary-foreground: 222 47% 4%;
+    --sidebar-accent: 217 33% 12%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 15%;
+    --sidebar-ring: 187 92% 53%;
   }
 }
 
@@ -100,6 +81,159 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  /* Monospace font for data */
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  /* Glassmorphism Card */
+  .glass-panel {
+    @apply relative overflow-hidden rounded-xl;
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--glass-border));
+    box-shadow: 
+      0 0 20px hsl(var(--glass-glow)),
+      inset 0 1px 0 hsl(187 92% 53% / 0.05);
+  }
+
+  .glass-panel-purple {
+    @apply glass-panel;
+    border-color: hsl(270 91% 75% / 0.2);
+    box-shadow: 
+      0 0 20px hsl(270 91% 75% / 0.1),
+      inset 0 1px 0 hsl(270 91% 75% / 0.05);
+  }
+
+  /* Neon text effects */
+  .neon-cyan {
+    color: hsl(var(--neon-cyan));
+    text-shadow: 0 0 10px hsl(var(--neon-cyan) / 0.5);
+  }
+
+  .neon-purple {
+    color: hsl(var(--neon-purple));
+    text-shadow: 0 0 10px hsl(var(--neon-purple) / 0.5);
+  }
+
+  .neon-green {
+    color: hsl(var(--neon-green));
+    text-shadow: 0 0 10px hsl(var(--neon-green) / 0.5);
+  }
+
+  .neon-yellow {
+    color: hsl(var(--neon-yellow));
+    text-shadow: 0 0 10px hsl(var(--neon-yellow) / 0.5);
+  }
+
+  /* Heartbeat animation for status indicator */
+  @keyframes heartbeat {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.2);
+      opacity: 0.7;
+    }
+  }
+
+  .heartbeat {
+    animation: heartbeat 1.5s ease-in-out infinite;
+  }
+
+  /* Pulse ring animation */
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+
+  .pulse-ring {
+    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Scanline effect */
+  @keyframes scanline {
+    0% {
+      transform: translateY(-100%);
+    }
+    100% {
+      transform: translateY(100%);
+    }
+  }
+
+  .scanline::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      hsl(var(--neon-cyan) / 0.1),
+      transparent
+    );
+    animation: scanline 3s linear infinite;
+    pointer-events: none;
+  }
+
+  /* Terminal cursor blink */
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  .cursor-blink {
+    animation: blink 1s step-end infinite;
+  }
+
+  /* Hover glow effect for cards */
+  .hover-glow {
+    @apply transition-all duration-300;
+  }
+
+  .hover-glow:hover {
+    border-color: hsl(var(--neon-cyan) / 0.4);
+    box-shadow: 
+      0 0 30px hsl(var(--neon-cyan) / 0.2),
+      inset 0 1px 0 hsl(var(--neon-cyan) / 0.1);
+  }
+
+  /* Grid background pattern */
+  .grid-bg {
+    background-image: 
+      linear-gradient(hsl(var(--border) / 0.3) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* Fade in animation */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s ease-out forwards;
   }
 }
