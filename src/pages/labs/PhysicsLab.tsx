@@ -35,7 +35,7 @@ export default function PhysicsLab() {
                     <ExperimentCard
                         key={experiment.id}
                         experiment={experiment}
-                        onRun={(id) => console.log("Run experiment:", id)}
+                        onRun={() => {}}
                     />
                 ))}
             </div>

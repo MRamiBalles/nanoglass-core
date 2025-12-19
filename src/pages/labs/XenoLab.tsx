@@ -4,6 +4,11 @@ import { experiments } from "@/data/experiments";
 import { ExperimentCard } from "@/components/labs/ExperimentCard";
 import { ClearanceGate } from "@/components/labs/ClearanceGate";
 
+/*
+ * SECURITY NOTE: ClearanceGate is a gamification UX feature, not a security boundary.
+ * The Xeno Lab contains educational simulation content - no sensitive data.
+ * This client-side gate is intentionally bypassable for the exploration experience.
+ */
 export default function XenoLab() {
     const xenoExperiments = experiments.filter(e => e.category === "Xeno-Cognition");
 
@@ -37,7 +42,7 @@ export default function XenoLab() {
                         <ExperimentCard
                             key={experiment.id}
                             experiment={experiment}
-                            onRun={(id) => console.log("Run experiment:", id)}
+                            onRun={() => {}}
                         />
                     ))}
                 </div>
