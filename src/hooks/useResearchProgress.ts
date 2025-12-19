@@ -1,26 +1,37 @@
 import { useState, useEffect } from "react";
+import { z } from "zod";
 import { experiments } from "@/data/experiments";
 
 // Key for localStorage
 const STORAGE_KEY = "nanoglass_research_progress_v1";
 
-interface ResearchState {
-    completedIds: string[];
-    level: number;
-}
+// Zod schema for runtime validation of localStorage data
+const ResearchStateSchema = z.object({
+    completedIds: z.array(z.string()),
+    level: z.number().int().min(1).max(5)
+});
+
+type ResearchState = z.infer<typeof ResearchStateSchema>;
+
+const DEFAULT_STATE: ResearchState = { completedIds: [], level: 1 };
 
 export function useResearchProgress() {
     const [state, setState] = useState<ResearchState>(() => {
-        // Initialize from local storage
+        // Initialize from local storage with schema validation
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
             try {
-                return JSON.parse(saved);
-            } catch (e) {
-                console.error("Failed to parse research progress", e);
+                const parsed = JSON.parse(saved);
+                const validated = ResearchStateSchema.safeParse(parsed);
+                if (validated.success) {
+                    return validated.data;
+                }
+                // Invalid schema - return default
+            } catch {
+                // JSON parse failed - return default
             }
         }
-        return { completedIds: [], level: 1 };
+        return DEFAULT_STATE;
     });
 
     // Persist on change

@@ -27,7 +27,7 @@ export function PaperReader({ paper, onClose }: PaperReaderProps) {
 
                         <h4>2. Methodology: Cortex-13</h4>
                         <p>
-              We utilized a Hybrid Mamba-Transformer architecture trained on a curriculum of "Innate" (Pre-training) -> "Social" (Instruction Tuning) -> "Specialized" (MoE Routing).
+                            We utilized a Hybrid Mamba-Transformer architecture trained on a curriculum of &quot;Innate&quot; (Pre-training) -&gt; &quot;Social&quot; (Instruction Tuning) -&gt; &quot;Specialized&quot; (MoE Routing).
                             Our results show a statistically significant phase transition (p &lt; 0.05) in the L1 Sparsity of the activation space.
                         </p>
 
