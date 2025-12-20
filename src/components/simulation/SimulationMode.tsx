@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, RotateCcw, Activity, Zap, Brain, TrendingDown, TrendingUp } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useSimulationAlerts } from "@/components/alerts/AlertSystem";
 
 interface SimulationState {
   energy: number;
@@ -29,7 +30,11 @@ export function SimulationMode() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [state, setState] = useState<SimulationState>(initialState);
   const [history, setHistory] = useState<{ energy: number; entropy: number }[]>([]);
-  const { getSpeedMultiplier } = useSettings();
+  const { getSpeedMultiplier, alertsEnabled } = useSettings();
+  const { triggerAlert } = useSimulationAlerts(alertsEnabled);
+  
+  // Track previous state for alert triggers
+  const prevStateRef = useRef<SimulationState>(initialState);
 
   const runSimulation = useCallback(() => {
     if (state.status !== "running") return;
@@ -85,6 +90,38 @@ export function SimulationMode() {
     });
   }, [state.status, state.energy, state.entropy]);
 
+  // Alert triggers based on state changes
+  useEffect(() => {
+    const prev = prevStateRef.current;
+    
+    // Convergence alert
+    if (state.status === "converged" && prev.status !== "converged") {
+      triggerAlert("success", "CONVERGENCE ACHIEVED", `System reached optimal state after ${state.cycles} cycles. Energy: ${state.energy.toFixed(4)}`);
+    }
+    
+    // Divergence alert
+    if (state.status === "diverged" && prev.status !== "diverged") {
+      triggerAlert("error", "DIVERGENCE DETECTED", "Energy levels critical! System unstable. Recommend immediate reset.");
+    }
+    
+    // Low energy milestone
+    if (state.energy < 0.3 && prev.energy >= 0.3) {
+      triggerAlert("info", "LOW ENERGY STATE", `Free energy dropped below 0.3. Current: ${state.energy.toFixed(4)}`);
+    }
+    
+    // High sparsity milestone
+    if (state.sparsity > 0.8 && prev.sparsity <= 0.8) {
+      triggerAlert("success", "HIGH SPARSITY", `Sparsity exceeded 80%. Symbolic crystallization in progress.`);
+    }
+    
+    // Temperature warning
+    if (state.temperature < 0.2 && prev.temperature >= 0.2) {
+      triggerAlert("warning", "LOW TEMPERATURE", "System cooling rapidly. Exploration capacity reduced.");
+    }
+    
+    prevStateRef.current = state;
+  }, [state, triggerAlert]);
+
   useEffect(() => {
     if (state.status !== "running") return;
 
@@ -94,11 +131,17 @@ export function SimulationMode() {
     return () => clearInterval(interval);
   }, [state.status, runSimulation, getSpeedMultiplier]);
 
-  const handleStart = () => setState((s) => ({ ...s, status: "running" }));
+  const handleStart = () => {
+    setState((s) => ({ ...s, status: "running" }));
+    triggerAlert("info", "SIMULATION STARTED", "Neural dynamics simulation initiated. Monitoring energy minimization...");
+  };
+  
   const handlePause = () => setState((s) => ({ ...s, status: "idle" }));
+  
   const handleReset = () => {
     setState(initialState);
     setHistory([]);
+    prevStateRef.current = initialState;
   };
 
   const getStatusColor = () => {

@@ -8,7 +8,12 @@
 
 @layer base {
   :root {
-    /* Ultra Dark Mode - Slate 950 Base */
+    /* Theme transition */
+    --theme-transition: background-color 0.5s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  /* Dark Mode - Default (Slate 950 Base) */
+  :root, .dark {
     --background: 222 47% 4%;
     --foreground: 210 40% 98%;
 
@@ -73,11 +78,72 @@
     --sidebar-border: 217 33% 15%;
     --sidebar-ring: 187 92% 53%;
   }
+
+  /* Light Mode */
+  .light {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+
+    /* Card/Panel - Light Glassmorphism */
+    --card: 210 40% 96%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 210 40% 96%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Neon Cyan - Deeper for contrast */
+    --primary: 187 92% 35%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Neon Purple - Deeper for contrast */
+    --secondary: 270 70% 50%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Muted - Light UI */
+    --muted: 210 40% 92%;
+    --muted-foreground: 215 20% 40%;
+
+    /* Accent */
+    --accent: 210 40% 90%;
+    --accent-foreground: 222 47% 11%;
+
+    /* Alert States */
+    --destructive: 0 84% 50%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Borders */
+    --border: 214 32% 85%;
+    --input: 214 32% 88%;
+    --ring: 187 92% 35%;
+
+    /* Custom NanoGlass tokens - Adjusted for light mode */
+    --neon-cyan: 187 92% 35%;
+    --neon-purple: 270 70% 50%;
+    --neon-green: 142 76% 36%;
+    --neon-yellow: 45 93% 40%;
+    --neon-red: 0 84% 50%;
+    
+    /* Light Glassmorphism */
+    --glass-bg: 210 40% 98% / 0.8;
+    --glass-border: 187 92% 35% / 0.2;
+    --glass-glow: 187 92% 35% / 0.1;
+
+    /* Sidebar */
+    --sidebar-background: 210 40% 96%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 187 92% 35%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 40% 92%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 85%;
+    --sidebar-ring: 187 92% 35%;
+  }
 }
 
 @layer base {
   * {
     @apply border-border;
+    transition: var(--theme-transition);
   }
 
   body {

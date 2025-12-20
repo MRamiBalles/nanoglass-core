@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, X, Palette, Zap, Sparkles, Monitor, SlidersHorizontal } from "lucide-react";
+import { Settings, X, Palette, Zap, Sparkles, Monitor, SlidersHorizontal, Sun, Moon, Bell } from "lucide-react";
 import { useSettings, ThemeVariant, AnimationSpeed } from "@/contexts/SettingsContext";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -71,6 +71,52 @@ export function SettingsPanel() {
               </div>
 
               <div className="p-6 space-y-8">
+                {/* Dark/Light Mode Toggle */}
+                <section>
+                  <div className="flex items-center gap-2 mb-4">
+                    {settings.colorMode === "dark" ? (
+                      <Moon className="w-4 h-4 text-neon-purple" />
+                    ) : (
+                      <Sun className="w-4 h-4 text-neon-yellow" />
+                    )}
+                    <h3 className="font-mono text-sm text-foreground">APPEARANCE MODE</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <motion.button
+                      onClick={() => settings.setColorMode("dark")}
+                      className={`p-4 rounded-lg border transition-all flex flex-col items-center gap-2 ${
+                        settings.colorMode === "dark"
+                          ? "border-neon-cyan bg-neon-cyan/10"
+                          : "border-border/50 bg-background/30 hover:border-border"
+                      }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Moon className={`w-6 h-6 ${settings.colorMode === "dark" ? "text-neon-cyan" : "text-muted-foreground"}`} />
+                      <span className="font-mono text-xs text-foreground">Dark Mode</span>
+                      <div className="w-full h-8 rounded bg-slate-900 border border-slate-700 flex items-center justify-center">
+                        <div className="w-3 h-3 rounded-full bg-cyan-400" />
+                      </div>
+                    </motion.button>
+                    <motion.button
+                      onClick={() => settings.setColorMode("light")}
+                      className={`p-4 rounded-lg border transition-all flex flex-col items-center gap-2 ${
+                        settings.colorMode === "light"
+                          ? "border-neon-cyan bg-neon-cyan/10"
+                          : "border-border/50 bg-background/30 hover:border-border"
+                      }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Sun className={`w-6 h-6 ${settings.colorMode === "light" ? "text-neon-yellow" : "text-muted-foreground"}`} />
+                      <span className="font-mono text-xs text-foreground">Light Mode</span>
+                      <div className="w-full h-8 rounded bg-slate-100 border border-slate-300 flex items-center justify-center">
+                        <div className="w-3 h-3 rounded-full bg-cyan-600" />
+                      </div>
+                    </motion.button>
+                  </div>
+                </section>
+
                 {/* Theme Selection */}
                 <section>
                   <div className="flex items-center gap-2 mb-4">
@@ -189,6 +235,24 @@ export function SettingsPanel() {
                         onCheckedChange={settings.setScanlineEnabled}
                       />
                     </div>
+                  </div>
+                </section>
+
+                {/* Alerts */}
+                <section>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Bell className="w-4 h-4 text-neon-yellow" />
+                    <h3 className="font-mono text-sm text-foreground">NOTIFICATIONS</h3>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/30 border border-border/30">
+                    <div>
+                      <p className="font-mono text-sm text-foreground">Critical Alerts</p>
+                      <p className="font-mono text-[10px] text-muted-foreground">Show simulation state notifications</p>
+                    </div>
+                    <Switch
+                      checked={settings.alertsEnabled}
+                      onCheckedChange={settings.setAlertsEnabled}
+                    />
                   </div>
                 </section>
               </div>
