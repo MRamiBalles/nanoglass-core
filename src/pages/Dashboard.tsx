@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 import { Zap, Activity, Shield, Brain } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
-import { SparsityChart } from "@/components/dashboard/SparsityChart"; // Replaced EnergyChart
+import { SparsityChart } from "@/components/dashboard/SparsityChart";
 import { LogTerminal } from "@/components/dashboard/LogTerminal";
+import { GlitchText } from "@/components/effects/GlitchText";
+import { SimulationMode } from "@/components/simulation/SimulationMode";
 
 export default function Dashboard() {
   return (
@@ -13,18 +15,22 @@ export default function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <div className="flex items-end gap-4">
+        <div className="flex items-end gap-4 flex-wrap">
           <div>
             <h1 className="text-4xl font-bold tracking-tight text-foreground">
-              PROJECT <span className="neon-cyan">NANOGLASS</span>
+              PROJECT{" "}
+              <GlitchText text="NANOGLASS" className="neon-cyan" />
             </h1>
             <p className="font-mono text-sm text-muted-foreground mt-1">
-              GLASS BOX INTERPRETER V1.0 • CORTEX-13 ARCHITECTURE
+              <GlitchText text="GLASS BOX INTERPRETER V1.0 • CORTEX-13 ARCHITECTURE" />
             </p>
           </div>
-          <div className="ml-auto flex items-center gap-2 glass-panel px-4 py-2 rounded-lg">
-            <div className="w-2 h-2 rounded-full bg-neon-green heartbeat" />
-            <span className="font-mono text-xs text-neon-green">SYSTEM ONLINE</span>
+          <div className="ml-auto flex items-center gap-3">
+            <SimulationMode />
+            <div className="flex items-center gap-2 glass-panel px-4 py-2 rounded-lg">
+              <div className="w-2 h-2 rounded-full bg-neon-green heartbeat" />
+              <span className="font-mono text-xs text-neon-green">SYSTEM ONLINE</span>
+            </div>
           </div>
         </div>
       </motion.header>
