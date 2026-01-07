@@ -43,12 +43,18 @@ class ThermoConfig:
     
     # Training
     learning_rate = 1e-3
-    lambda_physics = 1.0   # Weight for Gibbs constraint (if soft)
-    lambda_consist = 0.5   # Weight for Cp > 0 constraint
     epochs = 2000          # For demonstration
     
+    # ThermoLearn Loss Weights (Hammad & Mondal 2025)
+    # L = w1*MSE_H + w2*MSE_S + w3*MSE_Thermo
+    w1_enthalpy = 1.0      # Weight for enthalpy error
+    w2_entropy = 1.0       # Weight for entropy error  
+    w3_physics = 2.0       # Weight for physics constraint (G=H-TS)
+    lambda_consist = 0.5   # Weight for Cp > 0 constraint
+    
     # Normalization (approximate ranges for JANAF data)
-    T_min, T_max = 300.0, 3000.0
+    T_min, T_max = 300.0, 1500.0     # Training range
+    T_ood_min, T_ood_max = 2000.0, 3000.0  # OOD test range (>2000K)
     P_min, P_max = 1e4, 1e6         # Pascals
     H_scale = 1e5                   # J/mol
     S_scale = 100.0                 # J/(mol K)
@@ -59,15 +65,18 @@ config = ThermoConfig()
 # ==============================================================================
 # DATA SIMULATION (Placeholder for NIST-JANAF / PhononDB)
 # ==============================================================================
-def get_synthetic_materials_data(n_samples=500):
+def get_synthetic_materials_data(n_samples=500, t_range='train'):
     """
-    Generates synthetic thermodynamic data obeying G = H - TS 
-    to simulate NIST-JANAF data structure for testing the PINN.
+    Generates synthetic thermodynamic data obeying G = H - TS.
     
-    Real implementation should load from .csv files.
+    Args:
+        t_range: 'train' for T_min-T_max, 'ood' for T_ood range (>2000K)
     """
-    # Random T and P
-    T = np.random.uniform(config.T_min, config.T_max, (n_samples, 1))
+    # Temperature range based on mode
+    if t_range == 'ood':
+        T = np.random.uniform(config.T_ood_min, config.T_ood_max, (n_samples, 1))
+    else:
+        T = np.random.uniform(config.T_min, config.T_max, (n_samples, 1))
     P = np.random.uniform(config.P_min, config.P_max, (n_samples, 1))
     
     # Synthetic equations for Ideal Gas (just for ground truth generation)
@@ -159,13 +168,13 @@ def physics_loss(model, inputs, predictions, targets):
     S_true = targets[:, 1:2]
     G_true = targets[:, 2:3]
     
-    # 1. Data Loss (MSE Term)
-    # We normalized data loss components to balance gradients
+    # 1. Data Loss (MSE Term) with ThermoLearn weights
     l_H = F.mse_loss(H_pred, H_true) / (config.H_scale**2)
     l_S = F.mse_loss(S_pred, S_true) / (config.S_scale**2)
     l_G = F.mse_loss(G_pred, G_true) / (config.G_scale**2)
     
-    L_data = l_H + l_S + l_G
+    # Weighted sum per ThermoLearn: L = w1*MSE_H + w2*MSE_S + w3*MSE_G
+    L_data = config.w1_enthalpy * l_H + config.w2_entropy * l_S + config.w3_physics * l_G
     
     # 2. Thermodynamic Consistency (Derivative Check)
     # Cp = dH/dT. For stability, Cp > 0.
@@ -257,9 +266,9 @@ def train_thermo_pinn():
 if __name__ == "__main__":
     trained_model, _ = train_thermo_pinn()
     
-    # Verify Consistency on Test Set
-    print("\n[TEST] Validating Physical Consistency...")
-    X_test, _ = get_synthetic_materials_data(100)
+    # Verify Consistency on In-Distribution Test Set
+    print("\n[TEST] Validating Physical Consistency (In-Distribution)...")
+    X_test, Y_test = get_synthetic_materials_data(100, t_range='train')
     X_test.requires_grad_(True)
     preds = trained_model(X_test)
     H_pred = preds[:, 0:1]
@@ -272,12 +281,37 @@ if __name__ == "__main__":
     )[0][:, 0:1]
     
     min_Cp = dH_dT.min().item()
-    print(f"   Min Estimated Heat Capacity (Cp): {min_Cp:.4f}")
+    print(f"   Min Heat Capacity (Cp): {min_Cp:.4f}")
     
-    if min_Cp > -0.1: # Allow small numerical noise
-        print("   [OK] Cp > 0 satisfies thermodynamic stability (Second Law)")
+    # Compute MSE on in-distribution
+    mse_in = F.mse_loss(preds, Y_test).item()
+    print(f"   MSE (In-Distribution): {mse_in:.6f}")
+    
+    # =========================================================================
+    # OOD EVALUATION (T > 2000K) - Key ThermoLearn advantage
+    # =========================================================================
+    print("\n[OOD] Evaluating Out-of-Distribution (T > 2000K)...")
+    X_ood, Y_ood = get_synthetic_materials_data(100, t_range='ood')
+    with torch.no_grad():
+        preds_ood = trained_model(X_ood)
+    
+    mse_ood = F.mse_loss(preds_ood, Y_ood).item()
+    print(f"   MSE (OOD, T > 2000K): {mse_ood:.6f}")
+    
+    # Report OOD degradation ratio (ThermoLearn claims 43% improvement here)
+    if mse_in > 0:
+        ood_ratio = mse_ood / mse_in
+        print(f"   OOD/In-Dist Ratio: {ood_ratio:.2f}x")
+        if ood_ratio < 2.0:
+            print("   [OK] Good OOD generalization (physics-informed)")
+        else:
+            print("   [WARN] High OOD degradation - consider more physics regularization")
+    
+    # Final verdict
+    if min_Cp > -0.1:
+        print("\n   [OK] Cp > 0 satisfies thermodynamic stability")
     else:
-        print("   [WARN] Unstable thermodynamics detected (Cp < 0)")
+        print("\n   [WARN] Unstable thermodynamics detected (Cp < 0)")
 
     # Save for paper
     torch.save(trained_model.state_dict(), "thermo_pinn_model.pth")

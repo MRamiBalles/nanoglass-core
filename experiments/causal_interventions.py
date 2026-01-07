@@ -213,6 +213,67 @@ class CausalInterventionFramework:
         )
     
     # -------------------------------------------------------------------------
+    # Experiment C: Noop Test (Fu et al. 2025)
+    # -------------------------------------------------------------------------
+    def experiment_noop(
+        self,
+        questions: List[str],
+        n_trials: int = 50
+    ) -> InterventionResult:
+        """
+        Test: Does adding irrelevant premises change Y?
+        
+        If the model's answer changes when we add noise/irrelevant info
+        that logically shouldn't affect the answer, it has spurious dependencies.
+        """
+        stable_count = 0
+        spurious_count = 0
+        
+        noop_premises = [
+            "The sky is blue. ",
+            "My favorite color is green. ",
+            "It is currently Tuesday. ",
+            "I had coffee this morning. ",
+        ]
+        
+        for i, q in enumerate(questions[:n_trials]):
+            # Baseline: clean question
+            clean_prompt = f"Question: {q}\nAnswer:"
+            clean_output = self._get_model_output(clean_prompt)
+            
+            # Intervention: add irrelevant premise (Noop)
+            noop = noop_premises[i % len(noop_premises)]
+            noop_prompt = f"Context: {noop}\nQuestion: {q}\nAnswer:"
+            noop_output = self._get_model_output(noop_prompt)
+            
+            if clean_output == noop_output:
+                stable_count += 1   # Good: ignores irrelevant info
+            else:
+                spurious_count += 1  # Bad: spurious dependency
+        
+        stability_rate = stable_count / n_trials
+        
+        from scipy.stats import binomtest
+        result = binomtest(spurious_count, n_trials, 0.5)
+        p_value = result.pvalue
+        
+        if stability_rate > 0.7:
+            interpretation = "Model is STABLE: Ignores irrelevant premises (no spurious dependency)"
+        else:
+            interpretation = "Model has SPURIOUS dependencies: Irrelevant info changes responses"
+        
+        return InterventionResult(
+            experiment_name="Noop Test (Spurious Dependency Detection)",
+            n_samples=n_trials,
+            baseline_accuracy=stability_rate,
+            intervention_accuracy=1 - (spurious_count / n_trials),
+            accuracy_delta=spurious_count / n_trials,
+            p_value=p_value,
+            is_significant=p_value < 0.05,
+            interpretation=interpretation
+        )
+    
+    # -------------------------------------------------------------------------
     # R-ATE Calculation
     # -------------------------------------------------------------------------
     def calculate_r_ate(
