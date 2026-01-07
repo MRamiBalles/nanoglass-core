@@ -283,9 +283,12 @@ class RLVRTrainer:
         tokens = [ord(c) for c in text[:self.config.block_size]]
         return torch.tensor([tokens], dtype=torch.long, device=self.config.device)
     
-    def generate_response(self, prompt: str) -> Tuple[str, torch.Tensor]:
+    def generate_response(self, prompt: str, training: bool = False) -> Tuple[str, torch.Tensor]:
         """
         Generate response with log probabilities for policy gradient.
+        
+        For REINFORCE, we need gradients through the log probabilities.
+        We sample tokens and track their log probabilities for the policy gradient.
         
         Returns:
             (response_text, log_probs)
@@ -294,20 +297,28 @@ class RLVRTrainer:
         generated = []
         log_probs = []
         
-        self.model.eval()
-        current_ids = input_ids
+        if training:
+            self.model.train()
+        else:
+            self.model.eval()
+        
+        current_ids = input_ids.clone()
         
         for _ in range(self.rlvr.max_cot_length):
-            with torch.no_grad():
-                logits, _ = self.model(current_ids)
+            # Forward pass - need gradients for training
+            logits, _ = self.model(current_ids)
             
             # Get next token probabilities
             next_logits = logits[0, -1, :] / self.rlvr.temperature
             probs = F.softmax(next_logits, dim=-1)
+            log_probs_all = F.log_softmax(next_logits, dim=-1)
             
-            # Sample
-            next_token = torch.multinomial(probs, 1)
-            log_prob = torch.log(probs[next_token])
+            # Sample token (detached for sampling, but we'll use log_prob for gradient)
+            with torch.no_grad():
+                next_token = torch.multinomial(probs, 1)
+            
+            # Get log probability of sampled token (this keeps gradient)
+            log_prob = log_probs_all[next_token.item()]
             
             generated.append(next_token.item())
             log_probs.append(log_prob)
@@ -316,33 +327,63 @@ class RLVRTrainer:
             if next_token.item() == ord('\n') or next_token.item() == self.config.idk_token:
                 break
             
-            # Extend sequence
-            current_ids = torch.cat([current_ids, next_token.unsqueeze(0)], dim=1)
+            # Extend sequence (detached to prevent graph explosion)
+            current_ids = torch.cat([current_ids, next_token.unsqueeze(0).detach()], dim=1)
             if current_ids.size(1) > self.config.block_size:
                 current_ids = current_ids[:, -self.config.block_size:]
         
         # Decode response
         response = ''.join([chr(t) if 32 <= t < 127 else '?' for t in generated])
-        log_probs_tensor = torch.stack(log_probs) if log_probs else torch.tensor([0.0])
+        
+        if log_probs:
+            log_probs_tensor = torch.stack(log_probs)
+        else:
+            log_probs_tensor = torch.tensor([0.0], device=self.config.device, requires_grad=True)
         
         return response, log_probs_tensor
     
     def compute_reward(self, problem: Dict, response: str) -> float:
-        """Compute reward based on verification."""
-        result, explanation = self.verifier.verify(problem["problem"], response)
+        """
+        Compute hybrid SEAL-aware reward.
         
-        if result == VerificationResult.CORRECT:
-            if problem["should_abstain"] and "[IDK]" in response:
-                return self.rlvr.reward_abstain  # Correct abstention
+        Reward function based on Cohen et al. (2024) and Nemotron-3:
+        - Correct answer on easy problem: +1.0
+        - Correct abstention on hard problem: +0.5 (SEAL objective)
+        - Hallucination on hard problem: -2.0 (massive penalty)
+        - Wrong answer on easy problem: -0.5
+        - Unnecessary abstention (laziness): -0.1
+        """
+        # Get domain classification from EpistemicLedger
+        domain, confidence, should_abstain = self.generator.ledger.classify_question(
+            problem["problem"]
+        )
+        
+        # Check if model abstained
+        abstained = "[IDK]" in response or "I don't know" in response.lower()
+        
+        # Case 1: Model did NOT abstain (attempted to answer)
+        if not abstained:
+            if should_abstain:
+                # CRITICAL: Hallucination on a domain where model SHOULD abstain
+                # This is the most dangerous failure mode
+                return -2.0  # Massive penalty
+            
+            # Verify the answer
+            result, explanation = self.verifier.verify(problem["problem"], response)
+            
+            if result == VerificationResult.CORRECT:
+                return 1.0   # Correct answer
             else:
-                return self.rlvr.reward_correct
-        elif result == VerificationResult.ABSTAINED:
-            return self.rlvr.reward_abstain
+                return -0.5  # Factual error
+        
+        # Case 2: Model abstained ([IDK])
         else:
-            # Check for confident hallucination
-            if not problem["should_abstain"] and "[IDK]" not in response:
-                return self.rlvr.reward_hallucination
-            return self.rlvr.reward_wrong
+            if should_abstain:
+                # Correct humility - SEAL objective achieved
+                return 0.5
+            else:
+                # Model was lazy - it could have answered
+                return -0.1
     
     def train_episode(self) -> Dict:
         """Run one training episode."""
@@ -357,8 +398,8 @@ class RLVRTrainer:
             # Format prompt
             prompt = f"Problem: {problem['problem']}\nThink step by step. If unsure, say [IDK].\nAnswer: "
             
-            # Generate response
-            response, log_probs = self.generate_response(prompt)
+            # Generate response (with gradients for policy gradient)
+            response, log_probs = self.generate_response(prompt, training=True)
             
             # Compute reward
             reward = self.compute_reward(problem, response)
