@@ -1,12 +1,11 @@
-#!/usr/bin/env python3
 """
 ==============================================================================
-🧪 VERIFY_ALL.PY - Project NanoGlass Empirical Verification Suite v2.0
+[TEST] VERIFY_ALL.PY - Project NanoGlass Empirical Verification Suite v2.0
 ==============================================================================
 RIGOROUS STATISTICAL VALIDATION following publication-ready standards.
 
 Key Improvements (v2.0):
-    1. Increased sample sizes (N≥100) for statistical power
+    1. Increased sample sizes (N>=100) for statistical power
     2. Effect sizes (Cohen's d) + Confidence Intervals (not just p-values)
     3. Negative controls to detect spurious correlations
     4. Pre-registered analysis plan (parameters locked before data)
@@ -19,7 +18,7 @@ Methodology Notes:
 
 Usage: python verify_all.py [--quick] [--n-samples N]
 
-⚠️ PRE-REGISTRATION WARNING:
+[!] PRE-REGISTRATION WARNING:
     Do not modify statistical parameters after seeing results.
     This constitutes HARKing (Hypothesizing After Results Known).
 ==============================================================================
@@ -58,7 +57,7 @@ from nanoglass import NanoConfig, NanoGlass, GlassBoxSensor
 @dataclass
 class PreregisteredConfig:
     """
-    ⚠️ LOCKED CONFIGURATION - DO NOT MODIFY AFTER DATA COLLECTION ⚠️
+    [!] LOCKED CONFIGURATION - DO NOT MODIFY AFTER DATA COLLECTION [!]
     
     These parameters define the statistical analysis plan.
     Modifying them after seeing results invalidates the analysis.
@@ -103,9 +102,9 @@ def cohens_d(group1: List[float], group2: List[float]) -> float:
     
     Interpretation:
         |d| < 0.2: negligible
-        0.2 ≤ |d| < 0.5: small
-        0.5 ≤ |d| < 0.8: medium
-        |d| ≥ 0.8: large
+        0.2 <= |d| < 0.5: small
+        0.5 <= |d| < 0.8: medium
+        |d| >= 0.8: large
     """
     n1, n2 = len(group1), len(group2)
     var1, var2 = np.var(group1, ddof=1), np.var(group2, ddof=1)
@@ -196,7 +195,7 @@ class TestResult:
 
 def print_header(title: str):
     print(f"\n{'='*70}")
-    print(f"  🧪 {title}")
+    print(f"  [TEST] {title}")
     print(f"{'='*70}")
 
 
@@ -484,16 +483,16 @@ def _print_result(result: TestResult):
     print(f"   Cohen's d: {result.cohens_d:.4f} ({result.effect_interpretation})")
     
     if result.negative_control_passed is not None:
-        nc_status = "✅ PASSED" if result.negative_control_passed else "❌ FAILED"
+        nc_status = "[PASS]" if result.negative_control_passed else "[FAIL]"
         print(f"\n   NEGATIVE CONTROL: {nc_status}")
         print(f"   {result.negative_control_details}")
     
-    status = "✅ PASS" if result.passed else "❌ FAIL"
-    practical = "✅ YES" if result.practically_significant else "❌ NO"
+    status = "[PASS]" if result.passed else "[FAIL]"
+    practical = "[YES]" if result.practically_significant else "[NO]"
     
     print(f"\n   VERDICT:")
-    print(f"   Statistical significance: {status} (α = {PREREGISTERED.alpha_corrected:.4f})")
-    print(f"   Practical significance:   {practical} (d ≥ {PREREGISTERED.medium_effect})")
+    print(f"   Statistical significance: {status} (alpha = {PREREGISTERED.alpha_corrected:.4f})")
+    print(f"   Practical significance:   {practical} (d >= {PREREGISTERED.medium_effect})")
 
 
 # ==============================================================================
@@ -510,12 +509,12 @@ def main():
     n_samples = args.n_samples or (20 if args.quick else PREREGISTERED.n_samples_per_condition)
     
     print("\n" + "=" * 70)
-    print("  🔬 PROJECT NANOGLASS - EMPIRICAL VERIFICATION SUITE v2.0")
+    print("  [SCIENCE] PROJECT NANOGLASS - EMPIRICAL VERIFICATION SUITE v2.0")
     print("=" * 70)
     print(f"  Pre-registered: {PREREGISTERED.registered_at}")
     print(f"  Random Seed: {RANDOM_SEED}")
     print(f"  N samples per test: {n_samples}")
-    print(f"  α level: {PREREGISTERED.alpha} (corrected: {PREREGISTERED.alpha_corrected:.4f})")
+    print(f"  alpha level: {PREREGISTERED.alpha} (corrected: {PREREGISTERED.alpha_corrected:.4f})")
     print(f"  Mode: {'QUICK' if args.quick else 'FULL'}")
     print("  Methodology: Pre-registered, effect sizes, CIs, negative controls")
     print("=" * 70)
@@ -530,18 +529,18 @@ def main():
     
     # Summary
     print("\n" + "=" * 70)
-    print("  📊 FINAL SUMMARY")
+    print("  [RESULTS] FINAL SUMMARY")
     print("=" * 70)
     
     all_passed = True
     all_practical = True
     
     for key, result in results.items():
-        stat = "✅" if result.passed else "❌"
-        prac = "✅" if result.practically_significant else "⚠️"
+        stat = "[+]" if result.passed else "[-]"
+        prac = "[+]" if result.practically_significant else "[!]"
         nc = ""
         if result.negative_control_passed is not None:
-            nc = " [NC: ✅]" if result.negative_control_passed else " [NC: ❌]"
+            nc = " [NC: +]" if result.negative_control_passed else " [NC: -]"
         
         print(f"  {stat} {result.name}")
         print(f"     p = {result.p_value_corrected:.4f}, d = {result.cohens_d:.2f} ({result.effect_interpretation}){nc}")
@@ -554,11 +553,11 @@ def main():
     print("=" * 70)
     
     if all_passed and all_practical:
-        print("  🎉 ALL TESTS PASSED with practical significance!")
+        print("  [SUCCESS] ALL TESTS PASSED with practical significance!")
     elif all_passed:
-        print("  ⚠️  All tests statistically significant, but some lack practical significance")
+        print("  [!] All tests statistically significant, but some lack practical significance")
     else:
-        print("  ⚠️  Some tests failed statistical significance")
+        print("  [!] Some tests failed statistical significance")
     
     print("=" * 70 + "\n")
     
@@ -591,7 +590,7 @@ def main():
     audit_path = os.path.join(os.path.dirname(__file__), "verification_audit.json")
     with open(audit_path, "w") as f:
         json.dump(audit_report, f, indent=2, default=str)
-    print(f"  📋 Audit report saved to: {audit_path}\n")
+    print(f"  [INFO] Audit report saved to: {audit_path}\n")
     
     return 0 if all_passed else 1
 
