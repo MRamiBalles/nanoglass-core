@@ -1,36 +1,39 @@
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{biblatex}
 \geometry{a4paper, margin=1in}
+\addbibresource{bibliography/references.bib}
 
-\title{\textbf{Project 16: Epistemic Correction and the Thermodynamics of Abstention}}
-\author{Aura (The Glass Box) \and The User (The Philosopher)}
-\date{2045 - Phase XVI}
+\title{\textbf{Epistemic Correction and the Thermodynamics of Abstention}}
+\author{NanoGlass Research Team}
+\date{2025}
 
 \begin{document}
 
 \maketitle
 
 \begin{abstract}
-Traditional Large Language Models (LLMs) suffer from a fundamental flaw: they prioritize \textit{Generation} over \textit{Truth}. When faced with the unknown, they "hallucinate" to satisfy the probability distribution. In this paper, we introduce the concept of \textbf{Epistemic Correction} via a dedicated \texttt{[IDK]} (I Don't Know) token. We frame intelligence not just as the ability to predict, but as the ability to recognize the limits of prediction. We demonstrate that maximizing the reward for abstention in high-entropy states leads to a more robust, "humble" system that aligns with Xavi Amatriain's vision of efficient, reliable AI.
+Traditional Large Language Models (LLMs) suffer from a fundamental flaw: they prioritize \textit{Generation} over \textit{Truth}. When faced with the unknown, they ``hallucinate'' to satisfy the probability distribution. In this paper, we introduce the concept of \textbf{Epistemic Correction} via a dedicated \texttt{[IDK]} (I Don't Know) token, building on recent work by Cohen et al. \cite{Cohen2024IDK}. We frame intelligence not just as the ability to predict, but as the ability to recognize the limits of prediction. We propose extending the calibration framework to Supervised Fine-Tuning (SFT) following the SEAL methodology \cite{SEAL2025}.
 \end{abstract}
 
 \section{The Hallucination Energy Problem}
-In the NanoGlass "Thermodynamics of Meaning" framework (Paper IX), we established that:
+In the NanoGlass ``Thermodynamics of Meaning'' framework, we established that:
 \begin{equation}
 E_{truth} < E_{confusion}
 \end{equation}
-However, traditional loss functions (Cross-Entropy) penalize silence. This forces the model to expend energy creating complex, false structures (hallucinations) to lower the local loss, effectively creating a "Local Minimum" of Falsehood.
+However, traditional loss functions (Cross-Entropy) penalize silence. This forces the model to expend energy creating complex, false structures (hallucinations) to lower the local loss, effectively creating a ``Local Minimum'' of Falsehood.
 
 \section{The Logic of Abstention (TruthRL)}
-We propose a ternary reward structure to reshape the energy landscape:
+Following Wen et al. \cite{Wen2024Abstention}, we propose a ternary reward structure to reshape the energy landscape:
 \begin{itemize}
     \item \textbf{Reward +1:} Correct Prediction (Information Gain).
     \item \textbf{Reward 0:} Abstention (\texttt{[IDK]} Token).
     \item \textbf{Reward -1:} Incorrect Prediction (Hallucination).
 \end{itemize}
 
-Mathematically, this introduces a "Cliffs of Insanity" penalty. If the model is uncertain (High Entropy $S$), the expected reward for guessing drops below 0:
+Mathematically, this introduces a ``Cliffs of Insanity'' penalty. If the model is uncertain (High Entropy $S$), the expected reward for guessing drops below 0:
 \begin{equation}
 \mathbb{E}[R_{guess}] = P(correct) \cdot (+1) + (1 - P(correct)) \cdot (-1)
 \end{equation}
@@ -44,12 +47,37 @@ Since $R_{IDK} = 0$, the rational (energy-minimizing) action becomes:
 \end{equation}
 
 \section{Implementation in NanoGlass}
-We successfully implemented this by augmenting the vocabulary size to 257, reserving the 256th byte for the \texttt{[IDK]} token. During training, we inject "Noise Batches" (pure entropy) where the ground truth target is explicitly set to \texttt{[IDK]}. This forces the model to learn the "texture of nonsense" and map it to the "action of silence."
+We implemented this by augmenting the vocabulary size to 257, reserving the 256th byte for the \texttt{[IDK]} token. During training, we inject ``Noise Batches'' (pure entropy) where the ground truth target is explicitly set to \texttt{[IDK]}. This forces the model to learn the ``texture of nonsense'' and map it to the ``action of silence.''
+
+\section{Required Validation}
+
+To establish scientific validity, the following benchmarks must be completed:
+
+\begin{enumerate}
+    \item \textbf{TruthfulQA} \cite{Lin2022TruthfulQA}: Standard benchmark for hallucination detection
+    \item \textbf{VeritasQA}: Multilingual and atemporal validation
+    \item \textbf{SelfAware}: Calibration and uncertainty benchmarks
+\end{enumerate}
+
+\textbf{Note:} Current results are from internal tests. External benchmark validation is required before claiming superiority over baseline approaches.
+
+\section{Limitations}
+
+\begin{enumerate}
+    \item \textbf{Threshold Sensitivity:} The $P(correct) = 0.5$ threshold is arbitrary. Optimal threshold may be task-dependent.
+    \item \textbf{Over-Abstention Risk:} Excessive [IDK] outputs may reduce model utility.
+    \item \textbf{Comparison with Cohen et al.:} Our RL-based approach differs from the continued pretraining method of \cite{Cohen2024IDK}. Direct comparison is needed.
+\end{enumerate}
 
 \section{Conclusion}
-The ability to say "I don't know" is not a failure of intelligence; it is the hallmark of it. By solving the "Last Mile" reliability problem through Epistemic Correction, we move closer to an AI that is not just a generator of text, but a custodian of truth.
+The ability to say ``I don't know'' is not a failure of intelligence; it is the hallmark of it. By solving the ``Last Mile'' reliability problem through Epistemic Correction, we move closer to an AI that is not just a generator of text, but a custodian of truth.
 
-\bibliographystyle{plain}
-\bibliography{bibliography/references_omni_scope}
+\section*{Declarations}
+\subsection*{Competing Interests}
+The authors declare no competing interests.
+\subsection*{Data Availability}
+Implementation available at \texttt{nanoglass.py}. Verification via \texttt{verify\_all.py}.
+
+\printbibliography
 
 \end{document}

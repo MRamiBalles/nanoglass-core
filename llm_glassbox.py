@@ -248,51 +248,96 @@ class MambaBlock(nn.Module):
     """
     Mamba (State Space Model) Block.
     
-    DECISION: Why Mamba over Transformer?
-    1. Linear Complexity: Mamba scales linearly O(N) with sequence length, unlike Transformer's O(N^2).
-    2. Recurrent State: It maintains a compressed "hidden state" (h_t) that passes information 
-       forward, similar to an RNN but with structured matrices (HiPPO) for long-term memory.
+    ⚠️ CRITICAL WARNING: SIMPLIFIED IMPLEMENTATION ⚠️
+    ═══════════════════════════════════════════════════════════════════════════
+    This is a PEDAGOGICAL APPROXIMATION of Mamba, NOT the real architecture.
+    
+    WHAT THIS IMPLEMENTATION DOES:
+        - Gated convolution with sigmoid selection (simulates selectivity)
+        - Linear complexity O(N) for sequence length
+        
+    WHAT IT LACKS (vs Real Mamba/Mamba-2):
+        - Selective State Space Model (S6) with input-dependent A, B, C matrices
+        - Discretization via zero-order hold
+        - Hardware-aware parallel scan algorithm
+        - Tensor Core optimizations (2-8x speedup in Mamba-2)
+    
+    FOR PRODUCTION USE:
+        pip install mamba-ssm
+        from mamba_ssm import Mamba2
+        self.mamba = Mamba2(d_model=cfg.d_model, d_state=16, d_conv=4)
+    
+    References:
+        - Mamba: Gu & Dao (2023) arXiv:2312.00752
+        - Mamba-2 SSD: Dao & Gu (2024) arXiv:2405.21060
+        - Jamba (AI21): Production hybrid architecture
+    ═══════════════════════════════════════════════════════════════════════════
+    
+    EDUCATIONAL NOTES:
+    1. Linear Complexity: Mamba scales O(N), unlike Transformer's O(N^2).
+    2. Recurrent State: Compressed "hidden state" passes information forward,
+       using structured matrices (HiPPO) for long-term memory.
     
     GLASS BOX NOTE:
-    The 'hidden_state' here is a goldmine for symbolic extraction. Unlike the 'K/V cache' 
-    which stores specific past tokens, the Mamba state stores a *compressed representation* 
-    of the context.
+    The 'hidden_state' is valuable for symbolic extraction. Unlike K/V cache
+    which stores specific past tokens, the Mamba state stores a *compressed
+    representation* of the entire context.
     """
+    
+    # Flag to indicate this is simplified
+    IS_SIMPLIFIED = True
+    
     def __init__(self, cfg):
         super().__init__()
         self.d_model = cfg.d_model
         self.norm = RMSNorm(cfg.d_model)
         
-        # Projections
+        # ==== SIMPLIFIED PROJECTIONS ====
+        # Real Mamba-2 uses: in_proj → dt_proj, B_proj, C_proj → SSM → out_proj
         self.in_proj = nn.Linear(cfg.d_model, cfg.d_model * 2, bias=False)
         self.conv = nn.Conv1d(cfg.d_model, cfg.d_model, 3, padding=1, groups=cfg.d_model)
         self.out_proj = nn.Linear(cfg.d_model, cfg.d_model, bias=False)
+        
+        # ==== FOR REAL MAMBA-2 (uncomment when mamba_ssm installed) ====
+        # try:
+        #     from mamba_ssm import Mamba2
+        #     self.mamba_real = Mamba2(
+        #         d_model=cfg.d_model,
+        #         d_state=16,      # State dimension
+        #         d_conv=4,        # Local convolution width
+        #         expand=2         # Block expansion factor
+        #     )
+        #     self.IS_SIMPLIFIED = False
+        # except ImportError:
+        #     pass
         
     def forward(self, x):
         # x: (B, T, D)
         residual = x
         x = self.norm(x)
         
-        # Mamba Inner Flow:
+        # ==== SIMPLIFIED FLOW (educational approximation) ====
         # 1. Project to input/gate
         x_and_gate = self.in_proj(x)
         x_val, gate = x_and_gate.chunk(2, dim=-1)
         
         # 2. Convolution (Short-term context)
-        # Transpose for Conv1d: (B, D, T)
         x_conv = self.conv(x_val.transpose(1, 2)).transpose(1, 2)
         x_conv = F.silu(x_conv)
         
-        # 3. State Space Model (simplified approximated linear scan for educational purpose)
-        # Real Mamba uses a selective scan kernel. Here we use a gated multiplication 
-        # to simulate the "selection" mechanism.
-        # This is a simplification for the 'Glass Box' demo unless we install `mamba_ssm`.
-        y = x_conv * F.sigmoid(gate) 
+        # 3. "Selective" mechanism (SIMPLIFIED)
+        # Real Mamba: y = SSM(A(x), B(x), C(x)) where A,B,C are input-dependent
+        # This approximation: y = silu(conv(x)) * sigmoid(gate)
+        y = x_conv * F.sigmoid(gate)
         
-        # PROBE: Capture the Gating Selection
-        # This tells us WHAT information the model chose to explicitely keep vs forget.
+        # ==== REAL MAMBA-2 FLOW (uncomment when available) ====
+        # if hasattr(self, 'mamba_real') and not self.IS_SIMPLIFIED:
+        #     y = self.mamba_real(x)
+        
+        # PROBE: Capture gating selection for interpretability
         if random.random() < 0.01:
-             main_probe.activations['mamba_gate'] = F.sigmoid(gate).detach().mean(dim=1).cpu()
+            main_probe.activations['mamba_gate'] = F.sigmoid(gate).detach().mean(dim=1).cpu()
+            main_probe.activations['mamba_is_simplified'] = self.IS_SIMPLIFIED
 
         return residual + self.out_proj(y)
 
