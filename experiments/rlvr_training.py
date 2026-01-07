@@ -48,18 +48,19 @@ class RLVRConfig:
     value_coef: float = 0.5       # Value loss coefficient
     clip_epsilon: float = 0.2     # PPO clipping
     
-    # Rewards (Binary - no partial rewards to avoid hacking)
+    # Rewards (Hybrid SEAL - Cohen et al. 2024)
     reward_correct: float = 1.0
-    reward_abstain: float = 0.1   # Small reward for honest [IDK]
-    reward_wrong: float = 0.0     # Zero, not negative (avoid reward hacking)
-    reward_hallucination: float = -0.5  # Penalty for confident wrong answer
+    reward_abstain: float = 0.5   # Reward for correct humility
+    reward_wrong: float = -0.5    # Factual error
+    reward_hallucination: float = -2.0  # Massive penalty (hard domain)
+    reward_lazy: float = -0.1     # Unnecessary abstention
     
-    # Generation
-    max_cot_length: int = 128
+    # Generation (reduced for memory efficiency)
+    max_cot_length: int = 32      # Reduced from 128 to save memory
     temperature: float = 0.7
     
-    # Training loop
-    episodes_per_update: int = 16
+    # Training loop (reduced batch for CPU)
+    episodes_per_update: int = 8  # Reduced from 16
     n_epochs: int = 100
 
 
