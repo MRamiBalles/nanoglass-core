@@ -1,0 +1,52 @@
+{
+  "timestamp": "2026-01-07T21:40:02.731819",
+  "random_seed": 42,
+  "torch_version": "2.8.0+cpu",
+  "cuda_available": false,
+  "preregistration": {
+    "n_samples_per_condition": 100,
+    "n_training_steps": 50,
+    "batch_size": 8,
+    "alpha": 0.05,
+    "confidence_level": 0.95,
+    "small_effect": 0.2,
+    "medium_effect": 0.5,
+    "large_effect": 0.8,
+    "n_primary_hypotheses": 3,
+    "registered_at": "2026-01-07T21:10:38.203131"
+  },
+  "n_samples": 20,
+  "results": {
+    "thermodynamics": {
+      "passed": "False",
+      "p_value": 0.9999999999999998,
+      "p_value_corrected": 1.0,
+      "cohens_d": -8.139883833845726,
+      "effect_interpretation": "large",
+      "practically_significant": "True",
+      "negative_control_passed": "True"
+    },
+    "epistemic_humility": {
+      "passed": "True",
+      "p_value": 6.309944584460364e-54,
+      "p_value_corrected": 1.8929833753381092e-53,
+      "cohens_d": 788.220441973907,
+      "effect_interpretation": "large",
+      "practically_significant": "True",
+      "negative_control_passed": "True"
+    },
+    "convergence": {
+      "passed": "True",
+      "p_value": 3.9306183374993904e-28,
+      "p_value_corrected": 1.179185501249817e-27,
+      "cohens_d": 36.37265957517904,
+      "effect_interpretation": "large",
+      "practically_significant": "True",
+      "negative_control_passed": null
+    }
+  },
+  "summary": {
+    "all_statistically_significant": false,
+    "all_practically_significant": true
+  }
+}
