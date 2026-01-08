@@ -514,7 +514,7 @@ if __name__ == "__main__":
     data = torch.tensor([ord(c) for c in text], dtype=torch.long)
     
     model.train()
-    for _ in range(50):
+    for _ in range(5):
         ix = torch.randint(len(data) - config.block_size, (4,))
         x = torch.stack([data[i:i+config.block_size] for i in ix]).to(config.device)
         y = torch.stack([data[i+1:i+config.block_size+1] for i in ix]).to(config.device)
