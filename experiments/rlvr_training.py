@@ -52,7 +52,7 @@ class RLVRConfig(NanoConfig):
     # [CPU OPTIMIZED] Micro-Jamba Specs (Matches SFT Weights)
     n_layers: int = 3
     moe_experts: int = 8
-    moe_top_k: int = 1
+    moe_top_k: int = 6
     block_size: int = 32
     d_model: int = 256
 
@@ -628,7 +628,7 @@ if __name__ == "__main__":
         priming_data.append(tokenize("Problem: Solve NP-Hard problem. Answer: ", idk_at_end=True))
 
     model.train()
-    for _ in range(30): # Increased to 30 priming updates
+    for _ in range(0): # DISABLED: Priming was corrupting SFT weights
         # Sample random sample from priming_data
         sample = random.choice(priming_data)
         if len(sample) < 2: continue
