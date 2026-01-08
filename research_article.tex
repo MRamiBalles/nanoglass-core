@@ -189,6 +189,8 @@ Additionally, we propose refining the epistemic calibration by distinguishing \t
 
 Finally, we intend to evaluate the model on the CausalProbe-2024 benchmark using \textit{Temporal Isolation} (post-cutoff data) to distinguish associative reasoning from interventionist (Level 2) causal logic.
 
+To achieve true Glass-Box transparency beyond behavioral indicators, future work will instrument the model with \textit{Gated Sparse Autoencoders} (SAEs). This mechanistic approach aims to decompose the dense activations triggering the \texttt{[IDK]} token into monosemantic features, mitigating the feature suppression issues common in standard SAEs \cite{Anthropic2024SAE}. This mapping will serve to empirically verify that abstention arises from genuine epistemic uncertainty distributions rather than optimization shortcuts or ``lazy'' local minima.
+
 
 \section*{Declarations}
 
