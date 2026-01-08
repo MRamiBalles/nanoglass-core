@@ -56,9 +56,9 @@ Mamba2Real = None
 try:
     from mamba_ssm import Mamba2 as Mamba2Real
     MAMBA_AVAILABLE = True
-    print("✅ mamba-ssm detected. Using optimized Mamba-2 SSD kernel.")
+    print("[OK] mamba-ssm detected. Using optimized Mamba-2 SSD kernel.")
 except ImportError:
-    print("⚠️  mamba-ssm not installed. Using faithful SSM approximation.")
+    print("[WARN] mamba-ssm not installed. Using faithful SSM approximation.")
     print("   For 2-8x speedup: pip install mamba-ssm causal-conv1d>=1.2.0")
 
 
@@ -386,12 +386,12 @@ if __name__ == "__main__":
     
     print(f"   Input shape:  {tuple(x.shape)}")
     print(f"   Output shape: {tuple(y.shape)}")
-    print(f"   Shapes match: {'✅' if x.shape == y.shape else '❌'}")
+    print(f"   Shape match: {'[OK]' if x.shape == y.shape else '[FAIL]'}")
     
     # Parameter count
     n_params = sum(p.numel() for p in block.parameters())
     print(f"   Parameters: {n_params:,}")
     
     print("=" * 60)
-    print("✅ Mamba-2 SSD module ready for integration")
+    print("[OK] Mamba-2 SSD module ready for integration")
     print("=" * 60)

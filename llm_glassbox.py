@@ -416,46 +416,143 @@ class MoEBlock(nn.Module):
 #  CHAPTER 6: THE ORGANISM (CORTEX V2 - HYBRID)
 # ==============================================================================
 
+# ==============================================================================
+#  CHAPTER 6: THE ORGANISM (CORTEX V2 - HYBRID JAMBA ARCHITECTURE)
+# ==============================================================================
+
+try:
+    from layers.moe_granular import GranularMoE, MoEConfig
+    from mamba2_ssd import Mamba2Block, Mamba2Config
+except ImportError:
+    # Use mocks/placeholders if dependencies missing during dev
+    pass
+
 @dataclass
 class Config:
     vocab_size: int = 50304 # GPT-2 style (padded)
     d_model: int = 384     # Embedding dimension
-    n_layers: int = 6      # Depth
+    n_layers: int = 16     # Depth (Increased for hybrid capacity)
     n_heads: int = 6       # Breadth
     n_kv_groups: int = 3   # GQA groups
-    block_size: int = 256  # Context window
-    use_rope: bool = True
+    block_size: int = 1024 # Increased context for Mamba efficiency
+    use_rope: bool = False # Jamba does not use explicit PE in attention
     dropout: float = 0.1
+    # MoE Settings
+    moe_experts: int = 64
+    moe_top_k: int = 6
+    moe_shared: int = 2
+
+class NanoGlassHybridBlock(nn.Module):
+    """
+    Unified Hybrid Block implementing Jamba 1.5 Architecture.
+    
+    Structure:
+    1. Mixer Layer (Ratio 1:7)
+       - Layer 0-6: Mamba-2 SSD (Compression)
+       - Layer 7: Attention (Global Sync) - No RoPE
+       - Pre-norm: RMSNorm
+       
+    2. Processing Layer (Ratio 1:1)
+       - Even Layers: Dense MLP
+       - Odd Layers: Granular MoE
+       - Pre-norm: RMSNorm
+    """
+    def __init__(self, cfg: Config, layer_idx: int):
+        super().__init__()
+        self.layer_idx = layer_idx
+        
+        # 1. Determine Mixer Type (1:7 Ratio)
+        # Layers 7, 15, 23... are Attention. All others Mamba.
+        # This ensures we start with Mamba compression.
+        self.is_attention = (layer_idx + 1) % 8 == 0
+        
+        self.mixer_norm = RMSNorm(cfg.d_model)
+        
+        if self.is_attention:
+            # Attention Layer (Global Reasoning)
+            # CAUTION: Jamba disables RoPE/PE in attention layers
+            self.mixer = GQA(cfg.d_model, cfg.n_heads, cfg.n_kv_groups, use_rope=False)
+        else:
+            # Mamba-2 SSD Layer (Context Compression)
+            mamba_cfg = Mamba2Config(
+                d_model=cfg.d_model,
+                d_state=128, # Standard state size
+                expand=2
+            )
+            self.mixer = Mamba2Block(mamba_cfg)
+            
+        # 2. Determine MLP Type (MoE every 2 layers)
+        # Even: MLP, Odd: MoE (Nemotron-3 pattern)
+        # e.g., L0=MLP, L1=MoE, L2=MLP...
+        self.is_moe = (layer_idx % 2 != 0)
+        
+        self.mlp_norm = RMSNorm(cfg.d_model)
+        
+        if self.is_moe:
+            # Granular MoE (Specialized Processing)
+            moe_cfg = MoEConfig(
+                embed_dim=cfg.d_model,
+                num_experts=cfg.moe_experts,
+                num_shared=cfg.moe_shared,
+                top_k=cfg.moe_top_k
+            )
+            self.mlp = GranularMoE(moe_cfg)
+        else:
+            # Dense MLP (General Knowledge Highway)
+            self.mlp = SwiGLU(cfg.d_model, int(2.6 * cfg.d_model))
+
+    def forward(self, x):
+        # 1. Mixer Path (Mamba or Attention)
+        residual = x
+        x = self.mixer_norm(x)
+        
+        # Check if Attention requires layer_id (GQA impl specific)
+        if self.is_attention:
+            x = self.mixer(x, layer_id=self.layer_idx)
+        else:
+            x = self.mixer(x)
+            
+        x = residual + x
+        
+        # 2. MLP/MoE Path
+        residual = x
+        x = self.mlp_norm(x)
+        
+        if self.is_moe:
+            # MoE returns (output, aux_loss). We discard aux_loss for inference/simple fwd
+            # In training loop, we'd capture it.
+            # Wrapper to handle tuple return if needed, but GranularMoE returns tuple.
+            x_out, _ = self.mlp(x, return_aux_loss=False)
+            x = x_out
+        else:
+            x = self.mlp(x)
+            
+        x = residual + x
+        return x
 
 class CortexGlassBox(nn.Module):
-    def __init__(self, cfg, arch_type='Hybrid'):
+    def __init__(self, cfg: Config):
         super().__init__()
         self.cfg = cfg
         self.tok_emb = nn.Embedding(cfg.vocab_size, cfg.d_model)
         
+        # Hybrid Layers
         self.layers = nn.ModuleList()
         for i in range(cfg.n_layers):
-            if arch_type == 'Transformer':
-                self.layers.append(TransformerBlock(cfg, i))
-            elif arch_type == 'Mamba':
-                self.layers.append(MambaBlock(cfg))
-            elif arch_type == 'Hybrid':
-                # Alternating Transformer (Attention) and Mamba (State)
-                # This combines global reasoning (Attn) with local compression (Mamba)
-                if i % 2 == 0:
-                    self.layers.append(MambaBlock(cfg))
-                else:
-                    self.layers.append(TransformerBlock(cfg, i))
-            elif arch_type == 'MoE':
-                 self.layers.append(MoEBlock(cfg))
+            self.layers.append(NanoGlassHybridBlock(cfg, i))
         
         self.ln_f = RMSNorm(cfg.d_model) # Final normalization
         self.head = nn.Linear(cfg.d_model, cfg.vocab_size, bias=False)
         
-        # Weight Tying: The embedding matrix is reused as the final classifier.
-        # Rationale: If vector 'v' represents "Apple" in input, the same vector 'v' 
-        # should probably predict "Apple" at output. Saves massive parameters.
+        # Weight Tying
         self.tok_emb.weight = self.head.weight
+
+        # Register Probes
+        self.apply(self._register_monitors)
+
+    def _register_monitors(self, module):
+        # We can auto-register hooks on interesting layers here if needed
+        pass
 
         # Register Probes
         self.apply(self._register_monitors)
