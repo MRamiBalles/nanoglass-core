@@ -134,6 +134,18 @@ class Router(nn.Module):
         # Normalize weights to sum to 1
         expert_weights = top_k_probs / (top_k_probs.sum(dim=-1, keepdim=True) + 1e-9)
         
+        # [PROBE] Routing Entropy
+        # Measures if the router is confident (low entropy) or confused (high entropy)
+        try:
+            from nanoglass_probes import main_probe
+            if main_probe.enabled:
+                # Entropy of the full distribution (probs)
+                # H = -sum(p * log(p))
+                entropy = -(probs * torch.log(probs + 1e-9)).sum(dim=-1).mean()
+                main_probe.log("moe_entropy", entropy)
+        except ImportError:
+            pass
+        
         # Compute auxiliary load balancing loss
         aux_loss = self._compute_aux_loss(probs, top_k_indices)
         

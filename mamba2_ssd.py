@@ -149,6 +149,17 @@ class SSMCore(nn.Module):
         # Add residual (D skip connection)
         y = y + x * self.D
         
+        # [PROBE] Log State Saturation (Energy)
+        # Higher L2 norm = High "Free Energy" / Cognitive Load
+        # We assume 'h' at the last step represents the final compressed context.
+        try:
+            from nanoglass_probes import main_probe
+            if main_probe.enabled:
+                state_energy = h.norm(p=2).mean() # Average over batch/heads
+                main_probe.log("mamba_state_energy", state_energy)
+        except ImportError:
+            pass
+        
         return y
 
 

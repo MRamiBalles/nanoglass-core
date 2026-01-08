@@ -18,26 +18,7 @@ from typing import Optional, Tuple, List, Dict
 # We must insert "Probes" (thermometers) at key locations to measure internal activity.
 # This allows us to extract "Symbolic" representations from the "Sub-symbolic" vectors.
 
-class GlassBoxProbe:
-    """
-    A tool to capture and store internal activations during the forward pass.
-    Think of this as an EEG for the neural network.
-    """
-    def __init__(self):
-        self.activations: Dict[str, torch.Tensor] = {}
-
-    def hook(self, name):
-        """Returns a hook function to capture output of a layer."""
-        def forward_hook(module, input, output):
-            # We detach to save memory and avoid messing with gradients during inference/analysis
-            self.activations[name] = output.detach()
-        return forward_hook
-
-    def clear(self):
-        self.activations = {}
-
-# Global probe registry
-main_probe = GlassBoxProbe()
+from nanoglass_probes import main_probe
 
 
 # ==============================================================================

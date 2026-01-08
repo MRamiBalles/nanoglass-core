@@ -31,7 +31,12 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from nanoglass import NanoConfig, NanoGlass
+# Upgrade to Cortex v2 (GlassBox)
+try:
+    from llm_glassbox import CortexGlassBox as NanoGlass, Config as NanoConfig
+except ImportError:
+    from nanoglass import NanoGlass, NanoConfig
+
 from integrations.pvsmp_adapter import EpistemicLedger, TFNPClassifier
 
 # ==============================================================================
@@ -39,8 +44,8 @@ from integrations.pvsmp_adapter import EpistemicLedger, TFNPClassifier
 # ==============================================================================
 
 @dataclass
-class RLVRConfig:
-    """Configuration for RLVR training."""
+class RLVRConfig(NanoConfig):
+    """Configuration for RLVR training. Inherits model specs from NanoConfig (v2)."""
     # Training
     learning_rate: float = 1e-5
     gamma: float = 0.99           
