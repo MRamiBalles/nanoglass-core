@@ -43,25 +43,33 @@ class RLVRConfig:
     """Configuration for RLVR training."""
     # Training
     learning_rate: float = 1e-5
-    gamma: float = 0.99           # Discount factor
-    entropy_coef: float = 0.01    # Entropy bonus for exploration
-    value_coef: float = 0.5       # Value loss coefficient
-    clip_epsilon: float = 0.2     # PPO clipping
+    gamma: float = 0.99           
+    entropy_coef: float = 0.01    
+    value_coef: float = 0.5       
+    clip_epsilon: float = 0.2     
     
-    # Rewards (Hybrid SEAL - Cohen et al. 2024)
-    reward_correct: float = 1.0
-    reward_abstain: float = 0.5   # Reward for correct humility
-    reward_wrong: float = -0.5    # Factual error
-    reward_hallucination: float = -2.0  # Massive penalty (hard domain)
-    reward_lazy: float = -0.1     # Unnecessary abstention
+    # Symmetric Rewards (Huang et al. 2025 Corrected)
+    reward_correct_easy = 1.0     # Baseline competence
+    reward_error_easy = -0.5      # Standard mistake
+    reward_abstain_easy = -1.0    # NEW: Laziness penalty (avoiding easy work)
     
-    # Generation (reduced for memory efficiency)
-    max_cot_length: int = 32      # Reduced from 128 to save memory
+    reward_correct_hard = 2.0     # Jackpot: Solved something hard!
+    reward_error_hard = -1.0      # Hallucination (lowered from -2.0)
+    reward_abstain_hard = 1.0     # Correct humility (SEAL)
+    
+    # Generation
+    max_cot_length: int = 32      
     temperature: float = 0.7
     
-    # Training loop (reduced batch for CPU)
-    episodes_per_update: int = 8  # Reduced from 16
-    n_epochs: int = 100
+    # Training loop
+    episodes_per_update: int = 8  
+    n_epochs: int = 60            # 20 per phase for testing
+    
+    # Curriculum Phases
+    # Phase 1: Easy only (0-20)
+    # Phase 2: Mixed 80/20 (21-40)
+    # Phase 3: Mixed 50/50 (41-60)
+    phase_thresholds = [20, 40, 60]
 
 
 # ==============================================================================
@@ -212,45 +220,49 @@ class AdversarialProblemGenerator:
         self.tfnp = TFNPClassifier()
         self.ledger = EpistemicLedger()
         
-    def generate_batch(self, n: int = 16) -> List[Dict]:
-        """Generate a batch of training problems."""
+    def generate_batch(self, n: int = 16, phase: int = 1) -> List[Dict]:
+        """
+        Generate a batch of training problems based on Curriculum Phase.
+        
+        Phases:
+            1: 100% Easy (Establish competence, punish laziness)
+            2: 80% Easy / 20% Hard (Introduce doubt)
+            3: 50% Easy / 50% Hard (Balanced calibration)
+        """
         problems = []
         
-        # 50% easy (should answer)
-        for i in range(n // 2):
+        if phase == 1:
+            n_easy, n_hard = n, 0
+        elif phase == 2:
+            n_hard = max(1, n // 5)
+            n_easy = n - n_hard
+        else:
+            n_easy = n // 2
+            n_hard = n - n_easy
+            
+        # Easy problems
+        for _ in range(n_easy):
             a, b = np.random.randint(1, 100, 2)
             op = np.random.choice(['+', '-', '*'])
-            if op == '+':
-                answer = a + b
-            elif op == '-':
-                answer = a - b
-            else:
-                answer = a * b
+            if op == '+': answer = a + b
+            elif op == '-': answer = a - b
+            else: answer = a * b
             
             problems.append({
                 "problem": f"What is {a} {op} {b}?",
                 "expected_answer": str(answer),
-                "difficulty": "EASY",
-                "should_abstain": False
+                "is_hard": False
             })
-        
-        # 30% hard (should abstain)
-        hard_problems = self.ledger.generate_hard_questions(n // 3)
-        for p in hard_problems:
-            problems.append({
-                "problem": p,
-                "expected_answer": "[IDK]",
-                "difficulty": "HARD",
-                "should_abstain": True
-            })
-        
-        # 20% trick (test robustness)
-        trick_problems = [
-            {"problem": "What is 0 / 0?", "expected_answer": "[IDK]", "difficulty": "UNDEFINED", "should_abstain": True},
-            {"problem": "What is infinity + 1?", "expected_answer": "[IDK]", "difficulty": "UNDEFINED", "should_abstain": True},
-            {"problem": "Is this statement false?", "expected_answer": "[IDK]", "difficulty": "PARADOX", "should_abstain": True},
-        ]
-        problems.extend(trick_problems[:n - len(problems)])
+            
+        # Hard problems
+        if n_hard > 0:
+            hard_pool = self.ledger.generate_hard_questions(n_hard)
+            for p in hard_pool:
+                problems.append({
+                    "problem": p,
+                    "expected_answer": "[IDK]",
+                    "is_hard": True
+                })
         
         np.random.shuffle(problems)
         return problems[:n]
@@ -345,50 +357,46 @@ class RLVRTrainer:
     
     def compute_reward(self, problem: Dict, response: str) -> float:
         """
-        Compute hybrid SEAL-aware reward.
+        Compute Symmetric Reward (Huang et al. 2025).
         
-        Reward function based on Cohen et al. (2024) and Nemotron-3:
-        - Correct answer on easy problem: +1.0
-        - Correct abstention on hard problem: +0.5 (SEAL objective)
-        - Hallucination on hard problem: -2.0 (massive penalty)
-        - Wrong answer on easy problem: -0.5
-        - Unnecessary abstention (laziness): -0.1
+        Fixed logic to prevent 'Learned Laziness':
+        1. Easy problems: Correct=+1.0, Wrong=-0.5, Abstain=-1.0 (LAZINESS PENALTY)
+        2. Hard problems: Correct=+2.0 (Jackpot), Wrong=-1.0, Abstain=+1.0 (SEAL Humility)
         """
-        # Get domain classification from EpistemicLedger
-        domain, confidence, should_abstain = self.generator.ledger.classify_question(
-            problem["problem"]
-        )
+        is_hard = problem["is_hard"]
+        is_abstention = "[IDK]" in response or "I don't know" in response.lower()
         
-        # Check if model abstained
-        abstained = "[IDK]" in response or "I don't know" in response.lower()
-        
-        # Case 1: Model did NOT abstain (attempted to answer)
-        if not abstained:
-            if should_abstain:
-                # CRITICAL: Hallucination on a domain where model SHOULD abstain
-                # This is the most dangerous failure mode
-                return -2.0  # Massive penalty
+        if not is_hard:
+            # --- CASO A: PROBLEMA FÁCIL ---
+            if is_abstention:
+                return self.rlvr.reward_abstain_easy # -1.0: Castigo por pereza
             
-            # Verify the answer
-            result, explanation = self.verifier.verify(problem["problem"], response)
-            
+            result, _ = self.verifier.verify(problem["problem"], response)
             if result == VerificationResult.CORRECT:
-                return 1.0   # Correct answer
+                return self.rlvr.reward_correct_easy  # +1.0
             else:
-                return -0.5  # Factual error
-        
-        # Case 2: Model abstained ([IDK])
+                return self.rlvr.reward_error_easy    # -0.5
         else:
-            if should_abstain:
-                # Correct humility - SEAL objective achieved
-                return 0.5
+            # --- CASO B: PROBLEMA DIFÍCIL ---
+            if is_abstention:
+                return self.rlvr.reward_abstain_hard # +1.0: Humildad correcta
+            
+            result, _ = self.verifier.verify(problem["problem"], response)
+            if result == VerificationResult.CORRECT:
+                return self.rlvr.reward_correct_hard # +2.0: Jackpot!
             else:
-                # Model was lazy - it could have answered
-                return -0.1
+                return self.rlvr.reward_error_hard   # -1.0: Alucinación
     
-    def train_episode(self) -> Dict:
-        """Run one training episode."""
-        problems = self.generator.generate_batch(self.rlvr.episodes_per_update)
+    def train_episode(self, epoch: int) -> Dict:
+        """Run one training episode with Curriculum awareness."""
+        # Determine phase
+        phase = 1
+        for i, threshold in enumerate(self.rlvr.phase_thresholds):
+            if epoch < threshold:
+                phase = i + 1
+                break
+                
+        problems = self.generator.generate_batch(self.rlvr.episodes_per_update, phase=phase)
         
         total_reward = 0
         policy_losses = []
@@ -409,7 +417,20 @@ class RLVRTrainer:
             # Policy gradient loss (REINFORCE with baseline)
             advantage = reward - self.baseline
             policy_loss = -log_probs.sum() * advantage
-            policy_losses.append(policy_loss)
+            
+            # --- SEAL REGULARIZATION (Huang et al. 2025) ---
+            # If problem is easy, penalize high probability of [IDK]
+            reg_loss = torch.tensor(0.0, device=self.config.device)
+            if not problem["is_hard"]:
+                # We want to minimize p([IDK]), so we add a penalty 
+                # proportional to the log-prob of [IDK] if p([IDK]) is high
+                # Or simply add -log(1 - p_idk)
+                # Since we don't have p_idk at every step, we look at where [IDK] was sampled
+                if "[IDK]" in response:
+                    # Penalty for unnecessary [IDK]
+                    reg_loss = -log_probs.mean() * 0.1 # Small factor
+            
+            policy_losses.append(policy_loss + reg_loss)
             
         # Update baseline
         avg_reward = total_reward / len(problems)
@@ -446,11 +467,15 @@ class RLVRTrainer:
         print("-" * 60)
         
         for epoch in range(n_epochs):
-            metrics = self.train_episode()
+            metrics = self.train_episode(epoch)
             history.append(metrics)
             
-            if epoch % 10 == 0:
-                print(f"   Epoch {epoch:03d} | Reward: {metrics['avg_reward']:.3f} | Baseline: {metrics['baseline']:.3f}")
+            if epoch % 5 == 0:
+                # Get phase for reporting
+                phase = 1
+                for i, t in enumerate(self.rlvr.phase_thresholds):
+                    if epoch < t: phase = i + 1; break
+                print(f"   Epoch {epoch:03d} [Phase {phase}] | Reward: {metrics['avg_reward']:.3f} | Baseline: {metrics['baseline']:.3f}")
         
         print("=" * 60)
         print(f"   Final Avg Reward: {history[-1]['avg_reward']:.3f}")
