@@ -104,7 +104,12 @@ def train_sft_cpu_optimized():
                 updates += 1
                 valid_loss = accum_loss * grad_accum_steps # Recover actual loss scale
                 epoch_loss += valid_loss
-                print(f"      Update {updates:03d} | Loss: {valid_loss:.4f} ", end="\r")
+                msg = f"Update {updates:03d} | Loss: {valid_loss:.4f}"
+                print(f"      {msg} ", end="\r")
+                
+                # [LOG] Write to file for user to follow independently
+                with open("sft_training.log", "a") as f:
+                    f.write(msg + "\n")
                 
                 accum_loss = 0
                 

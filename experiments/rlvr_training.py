@@ -516,7 +516,12 @@ class RLVRTrainer:
                 # Check causality
                 r_ate = self.verify_causality_rate()
                 
-                print(f"   Epoch {epoch:03d} [Phase {phase}] | Reward: {metrics['avg_reward']:.3f} | R-ATE: {r_ate:.2f} | Baseline: {metrics['baseline']:.3f}")
+                msg = f"Epoch {epoch:03d} [Phase {phase}] | Reward: {metrics['avg_reward']:.3f} | R-ATE: {r_ate:.2f} | Baseline: {metrics['baseline']:.3f}"
+                print(f"   {msg}")
+                
+                # [LOG] Write for independent monitoring
+                with open("rlvr_training.log", "a") as f:
+                    f.write(msg + "\n")
         
         print("=" * 60)
         print(f"   Final Avg Reward: {history[-1]['avg_reward']:.3f}")
