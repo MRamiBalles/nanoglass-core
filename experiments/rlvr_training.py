@@ -477,7 +477,7 @@ class RLVRTrainer:
             metrics = self.train_episode(epoch)
             history.append(metrics)
             
-            if epoch % 5 == 0:
+            if epoch < 5 or epoch % 5 == 0:
                 # Get phase for reporting
                 phase = 1
                 for i, t in enumerate(self.rlvr.phase_thresholds):
