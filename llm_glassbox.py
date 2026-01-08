@@ -506,7 +506,22 @@ class CortexGlassBox(nn.Module):
         
         # Weight Tying
         self.tok_emb.weight = self.head.weight
-
+        
+        # [STABILITY] Initialize head with lower variance
+        nn.init.normal_(self.head.weight, mean=0.0, std=0.02)
+        
+        # [IDK TOKEN] Semantic initialization to prevent numerical collapse
+        # Use mean of common "uncertainty" words in ASCII range
+        # Characters: 'u','n','c','e','r','t','a','i','n' = [117,110,99,101,114,116,97,105,110]
+        if hasattr(cfg, 'idk_token'):
+            with torch.no_grad():
+                uncertainty_chars = [117, 110, 99, 101, 114, 116, 97, 105, 110]  # "uncertain"
+                mean_emb = self.tok_emb.weight[uncertainty_chars].mean(dim=0)
+                self.tok_emb.weight[cfg.idk_token] = mean_emb
+        
+        # [ACTIVATION TRACKING] For auxiliary loss
+        self.activation_accumulator = []
+        
         # Register Probes
         self.apply(self._register_monitors)
 
@@ -527,9 +542,11 @@ class CortexGlassBox(nn.Module):
         # Token Embeddings
         x = self.tok_emb(idx) # (B, T, C)
         
-        # Process Layers
+        # Process Layers with activation tracking
         for layer in self.layers:
             x = layer(x)
+            # Track activations for auxiliary loss
+            self.activation_accumulator.append(x.detach().clone())
             
         # Final Norm
         x = self.ln_f(x)
@@ -538,9 +555,18 @@ class CortexGlassBox(nn.Module):
         logits = self.head(x) # (B, T, vocab_size)
 
         loss = None
+        activation_loss = None
         if targets is not None:
             # Flatten for CrossEntropy
             loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1))
+            
+            # [ACTIVATION LOSS] Auxiliary loss for Mamba stability (Jamba 1.5 technique)
+            # Penalize large activations to prevent numerical instability
+            if self.activation_accumulator:
+                act_tensor = torch.cat([a.flatten() for a in self.activation_accumulator])
+                activation_loss = 1e-5 * (act_tensor ** 2).mean()
+                loss = loss + activation_loss
+                self.activation_accumulator = []  # Reset
 
         return logits, loss
 
