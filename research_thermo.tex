@@ -61,6 +61,7 @@ We constructed a synthetic dataset of 10,000 samples. Each sample contains:
     \item Numerical instantiation with values $H \in [100, 500]$ kJ/mol, $T \in [200, 400]$ K, $S \in [0.1, 0.5]$ kJ/(mol$\cdot$K)
     \item A chain-of-thought reasoning trace leading to the computed $G$
 \end{enumerate}
+Crucially, all samples used for verification during the RLVR phase were excluded from the initial SFT dataset. This strict separation prevents ``data leakage'' and ensures that reported improvements in physical consistency stem from internal law-induction rather than associative recall.
 
 \subsection{Model and Training}
 We use the Micro-Jamba configuration (see Table \ref{tab:config}).
