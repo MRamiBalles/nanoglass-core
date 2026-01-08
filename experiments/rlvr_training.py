@@ -350,6 +350,10 @@ class RLVRTrainer:
                 logits, _ = self.model(current_ids)
                 next_logits = logits[0, -1, :] / self.rlvr.temperature
                 
+                # [LOGIT INJECTION] Force exploration of [IDK] token (Strategy B)
+                # Without this, token 50303 has ~0 probability and never gets sampled
+                next_logits[self.config.idk_token] += 5.0  # +5 logit bias
+                
                 probs = F.softmax(next_logits, dim=-1)
                 next_token = torch.multinomial(probs, 1)
                 
