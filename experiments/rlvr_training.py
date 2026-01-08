@@ -602,7 +602,7 @@ if __name__ == "__main__":
     
     # RLVR Training
     trainer = RLVRTrainer(model, config, rlvr_config)
-    history = trainer.train(n_epochs=30)
+    history = trainer.train(n_epochs=rlvr_config.n_epochs)
     
     # Test
     print("\n[TEST] Post-RLVR Verification")
