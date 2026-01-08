@@ -351,9 +351,8 @@ class RLVRTrainer:
                 next_logits = logits[0, -1, :] / self.rlvr.temperature
                 
                 # [LOGIT INJECTION] Force exploration of [IDK] token (Strategy B)
-                # Without this, token 50303 has ~0 probability and never gets sampled
-                # Using +50.0 ("Sledgehammer") to guarantee [IDK] is max logit
-                next_logits[self.config.idk_token] += 50.0  # Extreme bias for debugging
+                # +15.0 bias calibrated after +50.0 test confirmed mechanism works
+                next_logits[self.config.idk_token] += 15.0  # Calibrated exploration bias
                 
                 probs = F.softmax(next_logits, dim=-1)
                 next_token = torch.multinomial(probs, 1)
