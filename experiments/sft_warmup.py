@@ -41,11 +41,11 @@ def train_sft_cpu_optimized():
     cfg = Config()
     
     # --- GPU MIGRATION SETTINGS (UNCOMMENT FOR COLAB/GPU) ---
-    cfg.n_layers = 16
-    cfg.d_model = 384
-    cfg.moe_experts = 64
+    cfg.n_layers = 3
+    cfg.d_model = 256
+    cfg.moe_experts = 8
     cfg.moe_top_k = 6
-    cfg.block_size = 256 # Higher context on GPU
+    cfg.block_size = 32 # Minimum context for CPU stability
     # -------------------------------------------------------
 
     # --- CPU FALLBACK (CURRENT LOCAL ENVIRONMENT) ---
