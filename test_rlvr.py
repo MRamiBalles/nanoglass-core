@@ -8,12 +8,14 @@ config = RLVRConfig(n_epochs=1)
 from llm_glassbox import CortexGlassBox as NanoGlass
 model = NanoGlass(config).to(config.device)
 
-# Load RLVR weights if exist
+# Load SFT weights
 import os
 if os.path.exists('nanoglass_sft_v2.pth'):
+    print('[LOAD] Loading SFT weights...')
     model.load_state_dict(torch.load('nanoglass_sft_v2.pth', map_location=config.device))
 
-trainer = RLVRTrainer(model, config)
+# Create trainer with correct signature (model, config, rlvr_config)
+trainer = RLVRTrainer(model, config, config)
 
 # Test
 test_problems = [
