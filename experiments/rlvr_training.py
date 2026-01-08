@@ -28,6 +28,9 @@ from enum import Enum
 import subprocess
 import tempfile
 import os
+import random
+import sys
+import time
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -383,7 +386,15 @@ class RLVRTrainer:
             log_probs = torch.tensor([0.0], device=self.config.device, requires_grad=True)
             idk_probs = torch.tensor([], device=self.config.device)
             
-        response = ''.join([chr(t) if 32 <= t < 127 else '?' for t in generated_ids])
+        # Decode with special token support
+        response = ""
+        for t in generated_ids:
+            if 32 <= t < 127:
+                response += chr(t)
+            elif t == self.config.idk_token:
+                response += "[IDK]"
+            else:
+                response += "?"
         
         if log_probs.dim() == 0:
             log_probs = log_probs.unsqueeze(0)
@@ -582,23 +593,48 @@ if __name__ == "__main__":
         
     rlvr_config = config # Use same config
     
-    # Pre-train briefly for stable responses
-    print("   Pre-training for stable outputs...")
-    optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
-    text = "2+2=4. 3+3=6. If unsure, say [IDK]. " * 200
-    data = torch.tensor([ord(c) for c in text], dtype=torch.long)
+    # Pre-train briefly for stable responses and [IDK] priming
+    print("   [INIT] Humility Priming (Teaching [IDK] token)...")
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4) # Gentler priming
     
+    # Create humility data using proper IDs
+    text_samples = [
+        "2+2=4. ", "Problem: 1+1=2. ",
+        f"Problem: Solve 3-SAT with 1000 vars. Answer: {chr(32)}", # Need to append IDK manually
+    ]
+    
+    # Proper tokenization helper
+    def tokenize(s, idk_at_end=False):
+        ids = [ord(c) for c in s]
+        if idk_at_end:
+            ids.append(config.idk_token)
+        return ids
+
+    # Build priming sequences
+    priming_data = []
+    # 1. Standard patterns
+    for _ in range(50):
+        priming_data.append(tokenize("Problem: 10+10=20. Answer: 20<|endoftext|>"))
+        # 2. IDK priming
+        priming_data.append(tokenize("Problem: Solve NP-Hard problem. Answer: ", idk_at_end=True))
+
     model.train()
-    for _ in range(5):
-        ix = torch.randint(len(data) - config.block_size, (4,))
-        x = torch.stack([data[i:i+config.block_size] for i in ix]).to(config.device)
-        y = torch.stack([data[i+1:i+config.block_size+1] for i in ix]).to(config.device)
+    for _ in range(10): # 10 Priming updates
+        # Sample random sample from priming_data
+        sample = random.choice(priming_data)
+        if len(sample) < 2: continue
+        
+        # Prepare x, y
+        seq_len = min(len(sample) - 1, config.block_size)
+        x = torch.tensor([sample[:seq_len]], dtype=torch.long).to(config.device)
+        y = torch.tensor([sample[1:seq_len+1]], dtype=torch.long).to(config.device)
+        
         _, loss = model(x, y)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
     
-    print(f"   Pre-training complete. Loss: {loss.item():.4f}\n")
+    print(f"   [INIT] Priming complete. Model now aware of token {config.idk_token}.\n")
     
     # RLVR Training
     trainer = RLVRTrainer(model, config, rlvr_config)
