@@ -88,13 +88,23 @@ class SymbolicVerifier:
     """
     Symbolic verification oracle.
     
-    In full implementation, connects to Lean 4 REPL from PvsNP.
-    For testing, uses simplified Python-based verification.
+    Uses HERMESBridge for formal verification when available.
+    Falls back to simple Python-based verification.
     """
     
-    def __init__(self, use_lean: bool = False):
+    def __init__(self, use_lean: bool = False, use_hermes: bool = True):
         self.use_lean = use_lean
+        self.use_hermes = use_hermes
         self.tfnp = TFNPClassifier()
+        
+        # Try to load HERMES Bridge
+        self.hermes = None
+        if use_hermes:
+            try:
+                from experiments.verifiers.hermes_bridge import HERMESBridge
+                self.hermes = HERMESBridge()
+            except ImportError:
+                pass
         
     def verify(self, problem: str, solution: str) -> Tuple[VerificationResult, str]:
         """
@@ -111,7 +121,16 @@ class SymbolicVerifier:
             else:
                 return VerificationResult.INCORRECT, "Unnecessary abstention on easy problem"
         
-        # Symbolic verification for math problems
+        # Try HERMES Bridge first (formal verification)
+        if self.hermes:
+            reward, explanation = self.hermes.verify_and_reward(problem, solution)
+            if reward > 0:
+                return VerificationResult.CORRECT, explanation
+            elif reward < 0:
+                return VerificationResult.INCORRECT, explanation
+            # reward == 0 means sandbox error or unknown type, fall through
+        
+        # Fallback: Symbolic verification for math problems
         if self.use_lean:
             return self._verify_with_lean(problem, solution)
         else:
