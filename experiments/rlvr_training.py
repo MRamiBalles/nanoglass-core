@@ -554,6 +554,15 @@ class RLVRTrainer:
                 with open("rlvr_training.log", "a") as f:
                     f.write(msg + "\n")
                 
+                # [SAMPLES] Log model responses for debugging
+                try:
+                    p = "What is 15 + 23?"
+                    resp, _, _ = self.generate_response_with_idk_probs(f"Problem: {p}\nAnswer: ", training=False)
+                    with open("rlvr_samples.log", "a") as f:
+                        f.write(f"Epoch {epoch:03d} | Q: {p} | A: {resp}\n")
+                except:
+                    pass
+                
                 # [CHECKPOINT] Save every 20 epochs
                 if epoch > 0 and epoch % 20 == 0:
                     ckpt_path = f"nanoglass_rlvr_ep{epoch:03d}.pth"
@@ -619,7 +628,7 @@ if __name__ == "__main__":
         priming_data.append(tokenize("Problem: Solve NP-Hard problem. Answer: ", idk_at_end=True))
 
     model.train()
-    for _ in range(10): # 10 Priming updates
+    for _ in range(30): # Increased to 30 priming updates
         # Sample random sample from priming_data
         sample = random.choice(priming_data)
         if len(sample) < 2: continue
@@ -635,6 +644,9 @@ if __name__ == "__main__":
         optimizer.step()
     
     print(f"   [INIT] Priming complete. Model now aware of token {config.idk_token}.\n")
+    
+    # Save priming weights for safety
+    torch.save(model.state_dict(), "nanoglass_primed.pth")
     
     # RLVR Training
     trainer = RLVRTrainer(model, config, rlvr_config)
