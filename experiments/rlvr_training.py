@@ -75,13 +75,13 @@ class RLVRConfig(NanoConfig):
     
     # Training loop
     episodes_per_update: int = 8  
-    n_epochs: int = 60            # 20 per phase for testing
+    n_epochs: int = 100           # Extended for full SEAL calibration
     
-    # Curriculum Phases
-    # Phase 1: Easy only (0-20)
-    # Phase 2: Mixed 80/20 (21-40)
-    # Phase 3: Mixed 50/50 (41-60)
-    phase_thresholds = [20, 40, 60]
+    # Curriculum Phases (100 epochs)
+    # Phase 1: Easy only (0-33)
+    # Phase 2: Mixed 80/20 (34-66)
+    # Phase 3: Mixed 50/50 (67-100)
+    phase_thresholds = [33, 66, 100]
 
 
 # ==============================================================================
@@ -446,6 +446,7 @@ class RLVRTrainer:
         policy_losses = []
         
         self.model.train()
+        idk_count = 0  # Track [IDK] usage
         
         for problem in problems:
             # Format prompt
@@ -453,6 +454,10 @@ class RLVRTrainer:
             
             # Generate response with IDK probs
             response, log_probs, idk_probs = self.generate_response_with_idk_probs(prompt, training=True)
+            
+            # Track [IDK] usage
+            if "[IDK]" in response:
+                idk_count += 1
             
             # Compute reward
             reward = self.compute_reward(problem, response)
@@ -498,10 +503,11 @@ class RLVRTrainer:
                 "avg_reward": avg_reward,
                 "loss": total_loss.item(),
                 "baseline": self.baseline,
-                "n_problems": len(problems)
+                "n_problems": len(problems),
+                "idk_rate": idk_count / len(problems)
             }
         
-        return {"avg_reward": avg_reward, "loss": 0.0, "baseline": self.baseline, "n_problems": len(problems)}
+        return {"avg_reward": avg_reward, "loss": 0.0, "baseline": self.baseline, "n_problems": len(problems), "idk_rate": idk_count / len(problems)}
     
     def train(self, n_epochs: int = None) -> List[Dict]:
         """Full RLVR training loop."""
@@ -528,17 +534,29 @@ class RLVRTrainer:
                 
                 # Check causality
                 r_ate = self.verify_causality_rate()
+                idk_rate = metrics.get('idk_rate', 0.0) * 100
                 
-                msg = f"Epoch {epoch:03d} [Phase {phase}] | Reward: {metrics['avg_reward']:.3f} | R-ATE: {r_ate:.2f} | Baseline: {metrics['baseline']:.3f}"
+                msg = f"Epoch {epoch:03d} [Phase {phase}] | Reward: {metrics['avg_reward']:.3f} | R-ATE: {r_ate:.2f} | Baseline: {metrics['baseline']:.3f} | IDK%: {idk_rate:.1f}"
                 print(f"   {msg}")
                 
                 # [LOG] Write for independent monitoring
                 with open("rlvr_training.log", "a") as f:
                     f.write(msg + "\n")
+                
+                # [CHECKPOINT] Save every 20 epochs
+                if epoch > 0 and epoch % 20 == 0:
+                    ckpt_path = f"nanoglass_rlvr_ep{epoch:03d}.pth"
+                    torch.save(self.model.state_dict(), ckpt_path)
+                    print(f"   [SAVE] Checkpoint: {ckpt_path}")
         
         print("=" * 60)
         print(f"   Final Avg Reward: {history[-1]['avg_reward']:.3f}")
         print("=" * 60)
+        
+        # [FINAL CHECKPOINT] Save final weights
+        final_path = "nanoglass_rlvr_final.pth"
+        torch.save(self.model.state_dict(), final_path)
+        print(f"   [SAVE] Final checkpoint: {final_path}")
         
         return history
 
