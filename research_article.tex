@@ -174,7 +174,10 @@ The sparsity decrease aligns with Tishby's Information Bottleneck principle \cit
     \item \textbf{Dataset:} Training uses synthetic data. Validation on naturalistic corpora (e.g., TruthfulQA \cite{Lin2022TruthfulQA}) is required.
     \item \textbf{Hardware:} CPU-only training uses a faithful but unoptimized Mamba-2 approximation. GPU experiments may reveal different dynamics.
     \item \textbf{Reproducibility:} While we report hyperparameters, stochastic variation across seeds was not systematically evaluated.
+    \item \textbf{Saturated MoE Regime:} We use $K=6$ active experts (of 8 total), operating closer to a dense ensemble than a sparse MoE. This sacrifices theoretical inference efficiency for gradient stability in hybrid Mamba layers. Industrial scaling would require $K=2$ for true sparsity benefits.
+    \item \textbf{Causal Level Ambiguity:} Current evaluation cannot distinguish Level-1 (parametric recall) from Level-2 (interventionist) causal reasoning. Future work should employ \textit{Temporal Isolation}---testing on data generated after the training cutoff or on synthetic counterfactuals (e.g., ``What if entropy decreased upon heating?'')---to confirm genuine deductive capability.
 \end{enumerate}
+
 
 \section{Conclusion}
 We demonstrated that a minimal hybrid architecture (Cortex-13) exhibits a measurable phase transition in feature sparsity ($L_0: 450 \rightarrow 35$) following reinforcement learning with verifiable rewards. Expert routing entropy decreases for specific syntactic tasks, and induction circuit attention weights crystallize from diffuse ($w<0.1$) to deterministic ($w>0.99$). These findings suggest that Glass-Box interpretability is achievable through appropriate training curricula rather than architectural simplification.
