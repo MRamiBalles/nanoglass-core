@@ -46,11 +46,12 @@ from integrations.pvsmp_adapter import EpistemicLedger, TFNPClassifier
 @dataclass
 class RLVRConfig(NanoConfig):
     """Configuration for RLVR training. Inherits model specs from NanoConfig (v2)."""
-    # CPU Optimization Overrides (Mini-Jamba)
-    n_layers: int = 6
-    moe_experts: int = 16
-    moe_top_k: int = 2
-    block_size: int = 64
+    # Standard Jamba v2 Specs (Optimal for GPU)
+    n_layers: int = 16
+    moe_experts: int = 64
+    moe_top_k: int = 6
+    block_size: int = 256
+    d_model: int = 384
 
     # Training
     learning_rate: float = 1e-5

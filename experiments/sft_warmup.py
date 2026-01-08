@@ -39,16 +39,26 @@ def train_sft_cpu_optimized():
     print(f"   Device: {device}")
     
     cfg = Config()
-    cfg.n_layers = 6       # Reduced from 16 to 6
-    cfg.moe_experts = 16   # Reduced from 64 to 16
-    cfg.moe_top_k = 2      # Reduced from 6 to 2
-    cfg.block_size = 64    # Atomic Context Window
-    cfg.d_model = 384      # Keep width for compatibility (or reduce if needed)
+    
+    # --- GPU MIGRATION SETTINGS (UNCOMMENT FOR COLAB/GPU) ---
+    cfg.n_layers = 16
+    cfg.d_model = 384
+    cfg.moe_experts = 64
+    cfg.moe_top_k = 6
+    cfg.block_size = 256 # Higher context on GPU
+    # -------------------------------------------------------
+
+    # --- CPU FALLBACK (CURRENT LOCAL ENVIRONMENT) ---
+    # cfg.n_layers = 3        
+    # cfg.moe_experts = 8     
+    # cfg.block_size = 32     
+    # cfg.d_model = 256       
+    # ------------------------------------------------
+    
     cfg.dropout = 0.1
     
-    # Explicitly set batch/accum params
-    real_batch_size = 1
-    grad_accum_steps = 32
+    real_batch_size = 1 # Keep low for CPU, increase to 4-16 for GPU
+    grad_accum_steps = 16 
     effective_batch_size = real_batch_size * grad_accum_steps
     
     print(f"   Config: L={cfg.n_layers}, Experts={cfg.moe_experts}, Ctx={cfg.block_size}")
