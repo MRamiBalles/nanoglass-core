@@ -165,7 +165,26 @@ class SymbolicVerifier:
                     return VerificationResult.CORRECT, f"Verified: {a}+{b}={expected}"
                 else:
                     return VerificationResult.INCORRECT, f"Expected {expected}"
+            
+            # [REVIEWER 2] Physical Constraint: Gibbs Free Energy (G = H - TS)
+            # If problem involves Gibbs, verify the RELATION, not just values.
+            if "Gibbs" in problem or "enthalpy" in solution.lower():
+                import re
+                try:
+                    # Look for G, H, T, S values in solution (e.g. "G=-10, H=5, T=300, S=0.05")
+                    h = float(re.search(r'H[:=]\s*([-+]?\d*\.?\d+)', solution).group(1))
+                    s = float(re.search(r'S[:=]\s*([-+]?\d*\.?\d+)', solution).group(1))
+                    t = float(re.search(r'T[:=]\s*([-+]?\d*\.?\d+)', solution).group(1))
+                    g_val = float(re.search(r'G[:=]\s*([-+]?\d*\.?\d+)', solution).group(1))
                     
+                    expected_g = h - t * s
+                    if abs(g_val - expected_g) < abs(g_val) * 0.05: # 5% tolerance
+                        return VerificationResult.CORRECT, "Verified: Gibbs Consistency G = H - TS"
+                    else:
+                        return VerificationResult.INCORRECT, f"Violation: Gibbs Law G={g_val} vs expected {expected_g:.2f}"
+                except (AttributeError, ValueError):
+                    pass # Fall through to basic numeric check
+            
             elif "-" in problem:
                 parts = problem.replace("?", "").split("-")
                 a, b = int(parts[0].split()[-1]), int(parts[1].split()[0])
@@ -320,6 +339,9 @@ class RLVRTrainer:
         self.verifier = SymbolicVerifier(use_lean=False)  # Set True if Lean available
         self.generator = AdversarialProblemGenerator()
         self.optimizer = torch.optim.AdamW(model.parameters(), lr=rlvr_config.learning_rate)
+        self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=rlvr_config.n_epochs)
+        self.device = config.device
+        self.current_epoch = 0 # Track for dynamic adjustments
         
         # Baseline for variance reduction
         self.baseline = 0.0
@@ -350,9 +372,15 @@ class RLVRTrainer:
                 logits, _ = self.model(current_ids)
                 next_logits = logits[0, -1, :] / self.rlvr.temperature
                 
-                # [LOGIT INJECTION] Force exploration of [IDK] token (Strategy B)
-                # +15.0 bias calibrated after +50.0 test confirmed mechanism works
-                next_logits[self.config.idk_token] += 15.0  # Calibrated exploration bias
+                # [DYNAMIC LOGIT INJECTION] (Reviewer 2 Refinement)
+                # Phase 1/2: +15.0 stable exploration
+                # Phase 3: Gradual reduction to +5.0 for intrinsic calibration
+                bias = 15.0
+                if self.current_epoch > 66:
+                    progress = (self.current_epoch - 66) / (self.rlvr.n_epochs - 66)
+                    bias = 15.0 - (10.0 * progress) # Scale to 5.0
+                
+                next_logits[self.config.idk_token] += bias
                 
                 probs = F.softmax(next_logits, dim=-1)
                 next_token = torch.multinomial(probs, 1)
@@ -538,6 +566,7 @@ class RLVRTrainer:
         print("-" * 60)
         
         for epoch in range(n_epochs):
+            self.current_epoch = epoch # Update tracker for dynamic adjustments
             metrics = self.train_episode(epoch)
             history.append(metrics)
             
@@ -549,11 +578,15 @@ class RLVRTrainer:
                 
                 # Check causality
                 r_ate = self.verify_causality_rate()
-                idk_rate = metrics.get('idk_rate', 0.0) * 100
+                idk_rate = metrics.get('idk_rate', 0.0)
                 
-                msg = f"Epoch {epoch:03d} [Phase {phase}] | Reward: {metrics['avg_reward']:.3f} | R-ATE: {r_ate:.2f} | Baseline: {metrics['baseline']:.3f} | IDK%: {idk_rate:.1f}"
+                msg = f"Epoch {epoch:03d} [Phase {phase}] | Reward: {metrics['avg_reward']:.3f} | R-ATE: {r_ate:.2f} | Baseline: {self.baseline:.3f} | IDK%: {idk_rate*100:.1f}"
                 print(f"   {msg}")
-                
+            
+                # Monitoring for IDK Collapse (Reviewer 2 Alerta)
+                if idk_rate > 0.40 and phase < 3:
+                    print(f"   [CAUTION] IDK% ({idk_rate*100:.1f}%) near collapse threshold. Watch closely.")
+                    
                 # [LOG] Write for independent monitoring
                 with open("rlvr_training.log", "a") as f:
                     f.write(msg + "\n")
