@@ -46,12 +46,12 @@ from integrations.pvsmp_adapter import EpistemicLedger, TFNPClassifier
 @dataclass
 class RLVRConfig(NanoConfig):
     """Configuration for RLVR training. Inherits model specs from NanoConfig (v2)."""
-    # Standard Jamba v2 Specs (Optimal for GPU)
-    n_layers: int = 16
-    moe_experts: int = 64
-    moe_top_k: int = 6
-    block_size: int = 256
-    d_model: int = 384
+    # [CPU OPTIMIZED] Micro-Jamba Specs (Matches SFT Weights)
+    n_layers: int = 3
+    moe_experts: int = 8
+    moe_top_k: int = 1
+    block_size: int = 32
+    d_model: int = 256
 
     # Training
     learning_rate: float = 1e-5
@@ -331,52 +331,64 @@ class RLVRTrainer:
 
     def generate_response_with_idk_probs(self, prompt: str, training: bool = False) -> Tuple[str, torch.Tensor, torch.Tensor]:
         """
-        Generate response and return IDK token probabilities for regularization.
+        Generate response using sampling, tracking log probs and IDK probabilities.
+        Optimized for CPU: Sample with no_grad, then do one forward pass.
         """
         input_ids = self.encode(prompt)
-        generated = []
-        log_probs = []
-        idk_probs_list = [] # Track P([IDK]) at each step
         
-        if training:
-            self.model.train()
-        else:
-            self.model.eval()
+        self.model.eval() # Generation always in eval mode
         
+        generated_ids = []
         current_ids = input_ids.clone()
         
-        for _ in range(self.rlvr.max_cot_length):
-            logits, _ = self.model(current_ids)
-            next_logits = logits[0, -1, :] / self.rlvr.temperature
-            
-            probs = F.softmax(next_logits, dim=-1)
-            log_probs_all = F.log_softmax(next_logits, dim=-1)
-            
-            # Track IDK probability for SEAL regularization
-            idk_p = probs[self.config.idk_token]
-            idk_probs_list.append(idk_p)
-            
-            with torch.no_grad():
+        # 1. SAMPLING (no_grad)
+        with torch.no_grad():
+            for _ in range(self.rlvr.max_cot_length):
+                logits, _ = self.model(current_ids)
+                next_logits = logits[0, -1, :] / self.rlvr.temperature
+                
+                probs = F.softmax(next_logits, dim=-1)
                 next_token = torch.multinomial(probs, 1)
-            
-            log_prob = log_probs_all[next_token.item()]
-            
-            generated.append(next_token.item())
-            log_probs.append(log_prob)
-            
-            if next_token.item() == ord('\n') or next_token.item() == self.config.idk_token:
-                break
-            
-            current_ids = torch.cat([current_ids, next_token.unsqueeze(0).detach()], dim=1)
-            if current_ids.size(1) > self.config.block_size:
-                current_ids = current_ids[:, -self.config.block_size:]
+                
+                generated_ids.append(next_token.item())
+                
+                if next_token.item() == ord('\n') or next_token.item() == self.config.idk_token:
+                    break
+                
+                current_ids = torch.cat([current_ids, next_token.unsqueeze(0)], dim=1)
+                if current_ids.size(1) > self.config.block_size:
+                    current_ids = current_ids[:, -self.config.block_size:]
         
-        response = ''.join([chr(t) if 32 <= t < 127 else '?' for t in generated])
+        # 2. EVALUATION (single forward pass with gradients if training)
+        if training and generated_ids:
+            self.model.train()
+            # Combine prompt and generated tokens
+            full_ids = torch.cat([input_ids, torch.tensor([generated_ids], device=self.config.device)], dim=1)
+            
+            # Mask out the prompt for loss/prob calculation
+            prompt_len = input_ids.size(1)
+            
+            logits, _ = self.model(full_ids)
+            # Log probs of whole sequence
+            log_probs_all = F.log_softmax(logits[0, prompt_len-1:-1, :], dim=-1) # (L_gen, Vocab)
+            probs_all = F.softmax(logits[0, prompt_len-1:-1, :], dim=-1)
+            
+            # Extract log probs of the generated tokens
+            target_tokens = torch.tensor(generated_ids, device=self.config.device).unsqueeze(-1)
+            log_probs = log_probs_all.gather(1, target_tokens).squeeze()
+            
+            # Track IDK probability for SEAL
+            idk_probs = probs_all[:, self.config.idk_token]
+        else:
+            log_probs = torch.tensor([0.0], device=self.config.device, requires_grad=True)
+            idk_probs = torch.tensor([], device=self.config.device)
+            
+        response = ''.join([chr(t) if 32 <= t < 127 else '?' for t in generated_ids])
         
-        log_probs_tensor = torch.stack(log_probs) if log_probs else torch.tensor([0.0], device=self.config.device, requires_grad=True)
-        idk_probs_tensor = torch.stack(idk_probs_list) if idk_probs_list else torch.tensor([], device=self.config.device)
-        
-        return response, log_probs_tensor, idk_probs_tensor
+        if log_probs.dim() == 0:
+            log_probs = log_probs.unsqueeze(0)
+            
+        return response, log_probs, idk_probs
     
     def compute_reward(self, problem: Dict, response: str) -> float:
         """
@@ -539,7 +551,7 @@ if __name__ == "__main__":
     print("\n[INIT] RLVR Training System")
     
     # Initialize
-    config = NanoConfig()
+    config = RLVRConfig(n_epochs=50)
     model = NanoGlass(config).to(config.device)
     
     # [SFT LOAD] Check for warm-up weights
@@ -550,7 +562,7 @@ if __name__ == "__main__":
     else:
         print("   [INFO] No SFT weights found. Starting from scratch (Cold Start - NOT RECOMMENDED).")
         
-    rlvr_config = RLVRConfig(n_epochs=50)  # Reduced for demo
+    rlvr_config = config # Use same config
     
     # Pre-train briefly for stable responses
     print("   Pre-training for stable outputs...")

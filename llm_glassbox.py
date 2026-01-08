@@ -395,6 +395,12 @@ class Config:
     moe_experts: int = 64
     moe_top_k: int = 6
     moe_shared: int = 2
+    
+    # Hardware
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
+    
+    # SEAL / [IDK] token settings
+    idk_token: int = 50303 # Last token in GPT-2 style vocab
 
 class NanoGlassHybridBlock(nn.Module):
     """
