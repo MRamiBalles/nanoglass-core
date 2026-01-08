@@ -48,22 +48,15 @@ We propose that the "Black Box" nature is a transient state of immature models. 
 \subsection{2.1 Mathematical Foundations of Hybrid Layers}
 Our architecture, \textit{Cortex-13}, integrates the global attention of Transformers with the linear-time history of State Space Models.
 
-\subsubsection{2.1.1 Attention & RoPE}
-We employ Rotary Position Embeddings (RoPE) to encode relative positions in the complex plane. For a token vector $x$ at position $m$, the rotation is given by:
-\begin{equation}
-    f_{q,k}(x, m) = (W_{q,k}x) e^{im\theta}
-\end{equation}
-This allows the attention mechanism to capture "distance" rather than just "location," essential for mathematical reasoning.
+\subsubsection{2.1.1 Attention & Hybrid Scaling}
+Unlike pure Transformers, our architecture follows the \textit{Jamba v2} specifications. We utilize a 1:7 ratio of Attention to Mamba layers. To maximize context compression, Attention layers explicitly disable Rotary Position Embeddings (RoPE), relying on the implicit sequence tracking of the preceding Mamba blocks.
 
-\subsubsection{2.1.2 Mamba State Space Models}
-To model the "Stream of Thought" ($h_t$), we use a discretized State Space Model:
+\subsubsection{2.1.2 Mamba-2 Structured State Space (SSD)}
+For the "Stream of Thought" ($h_t$), we upgrade to the \textit{Mamba-2 SSD} algorithm. The state update is formalized through unstructured multiplication in the dual space (SSD):
 \begin{equation}
-    h_t = \bar{A}h_{t-1} + \bar{B}x_t
+    M = L \circ \Delta \circ (C^\top B)
 \end{equation}
-\begin{equation}
-    y_t = C h_t
-\end{equation}
-Unlike the Transformer's $KV$-cache which grows quadratically $O(N^2)$, the state $h_t$ is fixed size $O(1)$, forcing the model to \textit{compress} concepts into symbols.
+Where $M$ represents the attention-equivalent kernel. This formulation allows $O(N)$ linear scaling while maintaining the expressivity of higher-order interactions. The state $h_t$ acts as a thermodynamic bottleneck, forcing the model to \textit{compress} concepts into sparse symbols.
 
 \subsection{2.2 Sparse Autoencoders (SAEs)}
 To resolve polysemanticity, we train an SAE on the activation space $x$:
@@ -75,12 +68,13 @@ Where $\lambda ||f||_1$ enforces sparsity. The resulting directions $f$ represen
 \section{3. Methodology}
 We implemented \textit{Cortex-13} in PyTorch, featuring:
 \begin{itemize}
-    \item \textbf{Blocks:} 6 Layers (Alternating Mamba/Transformer).
+    \item \textbf{Blocks:} Jamba Hybrid (1:7 ratio). Standard v2 uses 16 layers; for CPU-constrained environments, we utilize a "Micro-Jamba" configuration (3--6 layers).
     \item \textbf{Normalization:} RMSNorm for activation magnitude stability.
-    \item \textbf{Probing:} A custom \texttt{GlassBoxProbe} class hooked into the residual stream to extract activations $A^l$ at layer $l$.
+    \item \textbf{MoE:} Granular Mixture of Experts (64 Experts, Top-6 routing) with shared experts to prevent knowledge fragmentation.
+    \item \textbf{Probing:} Custom \texttt{GlassBoxProbe} for monitoring SSD State Energy and MoE Routing Entropy.
 \end{itemize}
 
-The training curriculum simulated 1M tokens of "Shakespeare" (Stage 1), followed by 10k steps of DPO (Stage 2), and finally MoE routing optimization (Stage 3).
+The training curriculum features an \textbf{Atomic SFT Warm-up} (3 epochs) to align basic physical syntax, followed by \textbf{RLVR (Reinforcement Learning with Verifiable Rewards)} to establish causal logic.
 
 \section{4. Experiments \& Findings}
 
