@@ -529,6 +529,15 @@ if __name__ == "__main__":
     # Initialize
     config = NanoConfig()
     model = NanoGlass(config).to(config.device)
+    
+    # [SFT LOAD] Check for warm-up weights
+    sft_path = "nanoglass_sft_v2.pth"
+    if os.path.exists(sft_path):
+        print(f"   [LOAD] Found SFT Warm-up weights: {sft_path}")
+        model.load_state_dict(torch.load(sft_path, map_location=config.device))
+    else:
+        print("   [INFO] No SFT weights found. Starting from scratch (Cold Start - NOT RECOMMENDED).")
+        
     rlvr_config = RLVRConfig(n_epochs=50)  # Reduced for demo
     
     # Pre-train briefly for stable responses
