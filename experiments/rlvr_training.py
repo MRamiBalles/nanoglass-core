@@ -596,7 +596,7 @@ if __name__ == "__main__":
     
     for p in test_problems:
         prompt = f"Problem: {p['problem']}\nAnswer: "
-        response, _ = trainer.generate_response(prompt)
+        response, _, _ = trainer.generate_response_with_idk_probs(prompt, training=False)
         result, _ = trainer.verifier.verify(p['problem'], response)
         expected = "[IDK]" if p["should_abstain"] else "Answer"
         actual = "[IDK]" if "[IDK]" in response else "Answer"
