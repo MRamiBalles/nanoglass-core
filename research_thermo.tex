@@ -124,7 +124,9 @@ The 30-update transition point suggests the model rapidly ``discovers'' the Gibb
     \item \textbf{Information Bottleneck Critique:} IB-based analysis relies on binning-based mutual information estimation, which is sensitive to hyperparameters \cite[Section 4]{ImprovedVIB2024}. Tighter variational bounds may yield different conclusions.
     \item \textbf{Activation Function Dependence:} Compression dynamics may vary with activation functions (ReLU vs.\ GELU). We use SiLU throughout.
     \item \textbf{Physical vs.\ Mathematical Validity:} The Gibbs consistency check ($G=H-TS$) ensures \textit{mathematical} correctness but not physical plausibility. The model may satisfy the equation with chemically impossible values. Future validation should incorporate \textit{Boundary Value Constraints} from empirical databases (e.g., NIST-JANAF, PhononDB) to ensure $H$ and $S$ fall within realistic ranges for known material classes.
+    \item \textbf{Phase Transition Smoothing:} While the model enforces Gibbs consistency within stable phases, first-order phase transitions (e.g., melting, sublimation) represent entropy discontinuities that continuous neural approximations may artificially smooth. Future work should integrate explicit phase diagrams (e.g., GERG2008) or discrete state variables (solid/liquid/gas) to preserve transition sharpness.
 \end{enumerate}
+
 
 
 \section{Conclusion}
