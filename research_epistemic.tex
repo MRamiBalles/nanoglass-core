@@ -15,7 +15,7 @@
 \maketitle
 
 \begin{abstract}
-Traditional Large Language Models (LLMs) suffer from a fundamental flaw: they prioritize \textit{Generation} over \textit{Truth}. When faced with the unknown, they ``hallucinate'' to satisfy the probability distribution. In this paper, we introduce the concept of \textbf{Epistemic Correction} via a dedicated \texttt{[IDK]} (I Don't Know) token, building on recent work by Cohen et al. \cite{Cohen2024IDK}. We frame intelligence not just as the ability to predict, but as the ability to recognize the limits of prediction. We propose extending the calibration framework to Supervised Fine-Tuning (SFT) following the SEAL methodology \cite{SEAL2025}.
+Traditional Large Language Models (LLMs) suffer from a fundamental flaw: they prioritize \textit{Generation} over \textit{Truth}. When faced with the unknown, they "hallucinate" to satisfy the probability distribution. In this paper, we introduce the concept of \textbf{Epistemic Correction} via a dedicated \texttt{[IDK]} (I Don't Know) token. We frame intelligence as the ability to recognize the limits of prediction. Utilizing the \textit{Jamba v2} Hybrid Architecture, we demonstrate that a ternary reward structure in a Reinforcement Learning with Verifiable Rewards (RLVR) loop effectively induces "Epistemic Humility" following the SEAL methodology \cite{SEAL2025}.
 \end{abstract}
 
 \section{The Hallucination Energy Problem}
@@ -46,8 +46,8 @@ Since $R_{IDK} = 0$, the rational (energy-minimizing) action becomes:
 \end{cases}
 \end{equation}
 
-\section{Implementation in NanoGlass}
-We implemented this by augmenting the vocabulary size to 257, reserving the 256th byte for the \texttt{[IDK]} token. During training, we inject ``Noise Batches'' (pure entropy) where the ground truth target is explicitly set to \texttt{[IDK]}. This forces the model to learn the ``texture of nonsense'' and map it to the ``action of silence.''
+\section{Implementation in Jamba v2}
+We implemented this by augmenting the GPT-2 style vocabulary (50,304 tokens), reserving the final index as the \texttt{[IDK]} token. During the RLVR phase, we utilize an automated verifier (HERMES/Lean 4) to provide the ternary rewards. If the verifier rejects a non-[IDK] response, the model receives a strong negative penalty (-1.0), whereas an [IDK] response is treated as a neutral "Safe Harbor" (Reward 0). This forces the model to map epistemic uncertainty in its SSD state dynamics to the action of silence.
 
 \section{Required Validation}
 
@@ -76,7 +76,7 @@ The ability to say ``I don't know'' is not a failure of intelligence; it is the 
 \subsection*{Competing Interests}
 The authors declare no competing interests.
 \subsection*{Data Availability}
-Implementation available at \texttt{nanoglass.py}. Verification via \texttt{verify\_all.py}.
+Implementation available at \texttt{llm\_glassbox.py}. RLVR training protocol in \texttt{experiments/rlvr\_training.py}. Verification via \texttt{verify\_all.py}.
 
 \printbibliography
 

@@ -34,8 +34,11 @@ Our \texttt{causal\_injector.py} experiments show:
     \item \textbf{Side Effects:} High values of $\alpha$ ($>10$) cause "Concept Bleed," where the model hallucinates related concepts (e.g., injecting "France" causes output "Paris Paris Paris").
 \end{itemize}
 
+\section{Toward Global Alignment: RLVR}
+While manual steering vectors provide surgical control, they require prior knowledge of the target direction. Our latest experiments with \textbf{Reinforcement Learning with Verifiable Rewards (RLVR)} demonstrate that the model can \textit{autonomously} discover and stabilize these steering directions. By rewarding truthful causal chains, the RLVR loop gradients effectively "bake" the optimal steering vectors into the model's fixed weights, transforming a temporary intervention into a permanent causal structure.
+
 \section{Conclusion}
-We have achieved surgical read/write access to the model's belief state. This raises profound questions about the nature of "Truth" in LLMs---it is merely a vector direction, easily rotatable.
+We have achieved surgical read/write access to the model's belief state. Whether through manual vector projection or automated RLVR alignment, "Truth" in LLMs is emerging as a controllable and verifiable geometric property. This raises profound questions about the nature of belief---it is merely a vector direction, now finally alignable with physical reality.
 
 \printbibliography
 
