@@ -19,6 +19,7 @@ from typing import Optional, Tuple, List, Dict
 # This allows us to extract "Symbolic" representations from the "Sub-symbolic" vectors.
 
 from nanoglass_probes import main_probe
+from mamba2_ssd import Mamba2Block, Mamba2Config
 
 
 # ==============================================================================
@@ -265,62 +266,34 @@ class MambaBlock(nn.Module):
     representation* of the entire context.
     """
     
-    # Flag to indicate this is simplified
-    IS_SIMPLIFIED = True
+    # Flag to indicate this is a real implementation
+    IS_SIMPLIFIED = False
     
     def __init__(self, cfg):
         super().__init__()
         self.d_model = cfg.d_model
-        self.norm = RMSNorm(cfg.d_model)
         
-        # ==== SIMPLIFIED PROJECTIONS ====
-        # Real Mamba-2 uses: in_proj → dt_proj, B_proj, C_proj → SSM → out_proj
-        self.in_proj = nn.Linear(cfg.d_model, cfg.d_model * 2, bias=False)
-        self.conv = nn.Conv1d(cfg.d_model, cfg.d_model, 3, padding=1, groups=cfg.d_model)
-        self.out_proj = nn.Linear(cfg.d_model, cfg.d_model, bias=False)
-        
-        # ==== FOR REAL MAMBA-2 (uncomment when mamba_ssm installed) ====
-        # try:
-        #     from mamba_ssm import Mamba2
-        #     self.mamba_real = Mamba2(
-        #         d_model=cfg.d_model,
-        #         d_state=16,      # State dimension
-        #         d_conv=4,        # Local convolution width
-        #         expand=2         # Block expansion factor
-        #     )
-        #     self.IS_SIMPLIFIED = False
-        # except ImportError:
-        #     pass
+        # [INTEGRATION] Use the faithful Mamba-2 SSD implementation
+        m2_cfg = Mamba2Config(
+            d_model=cfg.d_model,
+            d_state=64,      # Optimized for CPU/GlassBox
+            d_conv=4,
+            expand=2
+        )
+        self.mamba = Mamba2Block(m2_cfg)
         
     def forward(self, x):
         # x: (B, T, D)
-        residual = x
-        x = self.norm(x)
+        # Mamba2Block handles normalization and residual internally if needed,
+        # but here we follow the llm_glassbox convention.
+        y = self.mamba(x)
         
-        # ==== SIMPLIFIED FLOW (educational approximation) ====
-        # 1. Project to input/gate
-        x_and_gate = self.in_proj(x)
-        x_val, gate = x_and_gate.chunk(2, dim=-1)
-        
-        # 2. Convolution (Short-term context)
-        x_conv = self.conv(x_val.transpose(1, 2)).transpose(1, 2)
-        x_conv = F.silu(x_conv)
-        
-        # 3. "Selective" mechanism (SIMPLIFIED)
-        # Real Mamba: y = SSM(A(x), B(x), C(x)) where A,B,C are input-dependent
-        # This approximation: y = silu(conv(x)) * sigmoid(gate)
-        y = x_conv * F.sigmoid(gate)
-        
-        # ==== REAL MAMBA-2 FLOW (uncomment when available) ====
-        # if hasattr(self, 'mamba_real') and not self.IS_SIMPLIFIED:
-        #     y = self.mamba_real(x)
-        
-        # PROBE: Capture gating selection for interpretability
+        # PROBE: Capture activations for interpretability
         if random.random() < 0.01:
-            main_probe.activations['mamba_gate'] = F.sigmoid(gate).detach().mean(dim=1).cpu()
-            main_probe.activations['mamba_is_simplified'] = self.IS_SIMPLIFIED
+            main_probe.activations['mamba_is_real'] = True
+            main_probe.activations['mamba_type'] = "Mamba-2 SSD"
 
-        return residual + self.out_proj(y)
+        return y
 
 class RWKVBlock(nn.Module):
     """

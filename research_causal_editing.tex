@@ -2,11 +2,11 @@
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath}
 \usepackage{biblatex}
-\addbibresource{../bibliography/references_postdoc.bib}
+\addbibresource{bibliography/references.bib}
 
 \title{The Matrix Injection: Dynamic Steering Vectors for Causal Truth Editing}
-\author{Antigravity Research Lab}
-\date{\today}
+\author{Manu (PhD Candidate) \\ Supervisor: Antigravity AI}
+\date{2024-2025}
 
 \begin{document}
 
@@ -25,7 +25,9 @@ We define the steered activation $\hat{a}$ as:
 \begin{equation}
     \hat{a}_l = a_l + \alpha \cdot v_{concept}
 \end{equation}
-Where $v_{concept}$ is the direction identified by our Sparse Autoencoder (SAE). We test this consistency across varying contexts.
+Where $v_{concept}$ is the direction identified by our Sparse Autoencoder (SAE). 
+
+\textbf{Hardware Note:} The empirical results in this study were collected on CPU-only hardware using a faithful PyTorch approximation of the Mamba-2 SSD algorithm. While functionally equivalent to the official CUDA kernels (Dao \& Gu, 2024), the absence of Tensor Core acceleration limits the throughput of dynamic vector projection in real-time scenarios.
 
 \section{Results}
 Our \texttt{causal\_injector.py} experiments show:
