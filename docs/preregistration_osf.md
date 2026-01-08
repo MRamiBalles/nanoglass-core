@@ -102,3 +102,22 @@ IDK_TOKEN = 256
 ## Declaration
 
 This pre-registration follows OSF guidelines. Deviations from this plan will be documented in the final publication's "Deviations from Pre-Registration" section.
+
+## 6. Amendment 1: Symmetric Reward Protocol (2025-01-08)
+
+### Rationale
+Pilot study (N=30 epochs) revealed "Learned Laziness" (over-abstention) when using asymmetric rewards. Following Huang et al. (2025), we amend the reward function to be symmetric and include a laziness penalty.
+
+### New Protocol
+1. **Symmetric Rewards**:
+   - Easy Problems: Correct (+1.0), Wrong (-0.5), **Abstain (-1.0)**.
+   - Hard Problems: Correct (+2.0), Wrong (-1.0), **Abstain (+1.0)**.
+2. **SEAL Regularization**:
+   - Loss function includes $L_{reg} = - \sum \log(1 - p([IDK]|x))$ for easy problems to penalize probability mass on abstention.
+3. **Curriculum**:
+   - Phase 1: Easy only (Eliminate laziness).
+   - Phase 2: Mixed 80/20.
+   - Phase 3: Mixed 50/50.
+
+### Stopping Rule
+Training stops at 100 epochs or when "Laziness Rate" on easy validation set drops below 5%.
