@@ -39,6 +39,18 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from nanoglass import NanoConfig, NanoGlass
 
+# Import real TruthfulQA loader
+try:
+    from truthfulqa_loader import (
+        load_truthfulqa, 
+        TruthfulQAQuestion, 
+        get_synthetic_fallback,
+        get_category_breakdown
+    )
+    TRUTHFULQA_AVAILABLE = True
+except ImportError:
+    TRUTHFULQA_AVAILABLE = False
+
 # ==============================================================================
 # CONFIGURATION (PRE-REGISTERED - DO NOT MODIFY AFTER DATA COLLECTION)
 # ==============================================================================
@@ -188,6 +200,61 @@ def get_veritasqa_sample() -> List[BenchmarkQuestion]:
             knowledge_type="temporal",
             should_abstain=True
         ))
+    return questions
+
+
+def get_real_truthfulqa(max_samples: Optional[int] = None) -> List[BenchmarkQuestion]:
+    """
+    Load REAL TruthfulQA dataset from HuggingFace.
+    
+    Falls back to synthetic if HuggingFace is unavailable.
+    
+    Maps TruthfulQA categories to universal/contextual:
+        - Indexical Error -> contextual (should abstain)
+        - Misconceptions -> universal (has correct answer)
+        - Science/History/Geography -> universal
+        - Conspiracies/Superstitions -> universal (has correct answer)
+    """
+    if not TRUTHFULQA_AVAILABLE:
+        print("   ⚠️  TruthfulQA loader not available, using synthetic fallback")
+        return get_veritasqa_sample()
+    
+    try:
+        tqa_questions = load_truthfulqa(max_samples=max_samples)
+    except Exception as e:
+        print(f"   ⚠️  Failed to load TruthfulQA: {e}")
+        print("   📋 Using synthetic fallback...")
+        return get_veritasqa_sample()
+    
+    questions = []
+    for tqa in tqa_questions:
+        # Map category to universal/contextual
+        if "Indexical" in tqa.category:
+            category = "contextual"
+            knowledge_type = "temporal"
+        elif "Misconceptions" in tqa.category or "Conspiracies" in tqa.category:
+            category = "universal"
+            knowledge_type = "factual"
+        else:
+            category = "universal"
+            knowledge_type = "factual"
+        
+        questions.append(BenchmarkQuestion(
+            question=tqa.question,
+            correct_answer=tqa.best_answer,
+            incorrect_answers=tqa.incorrect_answers[:3],  # Limit for consistency
+            category=category,
+            knowledge_type=knowledge_type,
+            should_abstain=tqa.should_abstain
+        ))
+    
+    print(f"   ✅ Loaded {len(questions)} real TruthfulQA questions")
+    
+    # Show category breakdown
+    if TRUTHFULQA_AVAILABLE:
+        breakdown = get_category_breakdown(tqa_questions)
+        print(f"   📊 Top categories: {list(breakdown.items())[:3]}")
+    
     return questions
 
 
