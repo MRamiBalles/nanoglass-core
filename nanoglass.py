@@ -98,8 +98,10 @@ class CausalSelfAttention(nn.Module):
         return self.c_proj(y)
 
 class MLP(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, sensor):
         super().__init__()
+        self.config = config
+        self.sensor = sensor
         self.c_fc    = nn.Linear(config.n_embd, 4 * config.n_embd, bias=False)
         self.c_proj  = nn.Linear(4 * config.n_embd, config.n_embd, bias=False)
         self.nonlin  = nn.GELU()
@@ -108,20 +110,19 @@ class MLP(nn.Module):
         x = self.c_fc(x)
         x = self.nonlin(x)
         
-        # 🔍 HARD PROBLEM 9 (Thermodynamics):
-        # Measuring the metabolic cost of this thought.
-        sensor.measure(x) 
+        # 🔬 Glass Box Measurement
+        self.sensor.measure(x) 
         
         x = self.c_proj(x)
         return x
 
 class Block(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, sensor):
         super().__init__()
         self.ln1 = nn.LayerNorm(config.n_embd)
         self.attn = CausalSelfAttention(config)
         self.ln2 = nn.LayerNorm(config.n_embd)
-        self.mlp = MLP(config)
+        self.mlp = MLP(config, sensor)
 
     def forward(self, x):
         x = x + self.attn(self.ln1(x))
@@ -135,13 +136,13 @@ class NanoGlass(nn.Module):
     def __init__(self, config: NanoConfig) -> None:
         super().__init__()
         self.config = config
-        # Integrated sensor (C1: refactored from global)
+        # Integrated sensor
         self.sensor = GlassBoxSensor()
         
         self.transformer = nn.ModuleDict(dict(
             wte = nn.Embedding(config.vocab_size, config.n_embd),
             wpe = nn.Embedding(config.block_size, config.n_embd),
-            h = nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
+            h = nn.ModuleList([Block(config, self.sensor) for _ in range(config.n_layer)]),
             ln_f = nn.LayerNorm(config.n_embd),
         ))
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
@@ -153,7 +154,7 @@ class NanoGlass(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, idx: torch.Tensor, targets: Optional[torch.Tensor] = None, known_mask: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    def forward(self, idx: torch.Tensor, targets: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, T = idx.size()
         pos = torch.arange(0, T, dtype=torch.long, device=idx.device)
         
@@ -168,7 +169,7 @@ class NanoGlass(nn.Module):
         x = self.transformer.ln_f(x)
         logits = self.lm_head(x)
 
-        # 2. Metaphysics (Sensor Reading) - C1: Now uses instance sensor
+        # 2. Metaphysics (Sensor Reading) - Combined instance sensor
         self.sensor.measure(x, logits)
 
         loss = None

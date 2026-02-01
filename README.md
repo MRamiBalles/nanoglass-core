@@ -21,20 +21,20 @@ python verify_all.py
 ## 📁 Project Structure
 
 ```
-electric-gravity/
+electric-gravity-nanoglass/
 ├── nanoglass.py           # Core byte-level Transformer with TruthRL
 ├── verify_all.py          # Empirical verification suite
-├── llm_glassbox.py        # Original Cortex-13 hybrid implementation
-├── sae_training_curriculum.py  # Sparse Autoencoder training
-│
-├── experiments/           # Individual experiment scripts
-│   ├── qualia_causality.py
-│   ├── reliability_test.py
-│   └── ... (15 scripts)
-│
-├── bibliography/          # Academic references (.bib files)
-│   └── references*.bib
-│
+├── llm_glassbox.py        # Cortex-13 hybrid implementation (Mamba-2 + GQA)
+├── webapp/                # React Dashboard Frontend
+│   └── api_bridge.py      # FastAPI bridge for web integration
+├── experiments/           # Research & Benchmarking
+│   ├── truthfulqa_loader.py    # REAL TruthfulQA integration
+│   ├── truthfulness_benchmark.py # Truthfulness & Calibration
+│   ├── anchored_review.py      # Claim validation vs baselines
+│   └── ... (20+ scripts)
+├── scripts/               
+│   └── generate_kg.py     # Knowledge Graph Generator (Idea2Story)
+├── data/                  # Knowledge Graph & Cache
 └── research_*.tex         # LaTeX papers for each finding
 ```
 

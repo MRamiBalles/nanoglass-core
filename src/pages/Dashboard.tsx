@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Zap, Activity, Shield, Brain } from "lucide-react";
+import { useEffect, useState } from "react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { SparsityChart } from "@/components/dashboard/SparsityChart";
 import { LogTerminal } from "@/components/dashboard/LogTerminal";
@@ -7,6 +8,40 @@ import { GlitchText } from "@/components/effects/GlitchText";
 import { SimulationMode } from "@/components/simulation/SimulationMode";
 
 export default function Dashboard() {
+  const [metrics, setMetrics] = useState({
+    energy: 0.1542,
+    entropy: 0.12,
+    sparsity: 32.4,
+    status: "ACTIVE",
+    isHallucinating: false
+  });
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/health");
+        const health = await response.json();
+        
+        if (health.status === "ok") {
+          const res = await fetch("http://localhost:8000/metrics");
+          const data = await res.json();
+          if (data.energy_history.length > 0) {
+            setMetrics(prev => ({
+              ...prev,
+              energy: data.energy_history[data.energy_history.length - 1],
+              entropy: data.entropy_history[data.entropy_history.length - 1] || prev.entropy,
+            }));
+          }
+        }
+      } catch (e) {
+        console.log("API Bridge not reachable. Running in simulation mode.");
+      }
+    };
+
+    const interval = setInterval(fetchMetrics, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="p-8">
       {/* Header */}
@@ -39,7 +74,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <MetricCard
           title="Free Energy"
-          value="0.1542"
+          value={metrics.energy.toFixed(4)}
           label="Minimizing (Optimal)"
           icon={Zap}
           iconColor="yellow"
@@ -47,26 +82,26 @@ export default function Dashboard() {
         />
         <MetricCard
           title="L0 Sparsity"
-          value="32.4"
+          value={metrics.sparsity.toFixed(1)}
           label="Crystallized (Boolean)"
           icon={Activity}
           iconColor="purple"
           delay={0.2}
         />
         <MetricCard
-          title="MoE Experts"
-          value="8/8"
-          label="Routing Entropy: 0.12"
+          title="Entropy"
+          value={metrics.entropy.toFixed(3)}
+          label="Routing Diversity"
           icon={Brain}
           iconColor="cyan"
           delay={0.25}
         />
         <MetricCard
           title="TruthRL Status"
-          value="ACTIVE"
-          label="Hallucination Shield: ON"
+          value={metrics.status}
+          label={metrics.isHallucinating ? "HALLUCINATION DETECTED" : "Hallucination Shield: ON"}
           icon={Shield}
-          iconColor="green"
+          iconColor={metrics.isHallucinating ? "red" : "green"}
           delay={0.3}
         />
       </div>
