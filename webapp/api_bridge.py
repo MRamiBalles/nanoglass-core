@@ -31,11 +31,11 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from nanoglass import NanoConfig, NanoGlass, sensor
+    from nanoglass import NanoConfig, NanoGlass
 except ImportError:
     # Fallback for development/testing if nanoglass.py is not in parent
     sys.path.insert(0, os.getcwd())
-    from nanoglass import NanoConfig, NanoGlass, sensor
+    from nanoglass import NanoConfig, NanoGlass
 
 app = FastAPI(
     title="NanoGlass API Bridge",
@@ -55,6 +55,9 @@ app.add_middleware(
 # Global model state
 config = NanoConfig()
 model = None
+
+# Security: Maximum input length to prevent DoS
+MAX_INPUT_LENGTH = 4096
 
 def load_model():
     global model
@@ -99,10 +102,16 @@ async def health_check():
 @app.get("/metrics")
 async def get_metrics():
     """Returns the latest history from the GlassBox Sensor."""
+    if model is None or not hasattr(model, 'sensor'):
+        return {
+            "energy_history": [],
+            "entropy_history": [],
+            "total_readings": 0
+        }
     return {
-        "energy_history": sensor.energy_history[-50:] if sensor.energy_history else [],
-        "entropy_history": sensor.entropy_history[-50:] if sensor.entropy_history else [],
-        "total_readings": len(sensor.energy_history)
+        "energy_history": model.sensor.energy_history[-50:] if model.sensor.energy_history else [],
+        "entropy_history": model.sensor.entropy_history[-50:] if model.sensor.entropy_history else [],
+        "total_readings": len(model.sensor.energy_history)
     }
 
 @app.post("/analyze", response_model=AnalysisResponse)
@@ -116,6 +125,9 @@ async def analyze_text(query: Query):
     
     if not query.text.strip():
         raise HTTPException(status_code=400, detail="Empty input text")
+    
+    if len(query.text) > MAX_INPUT_LENGTH:
+        raise HTTPException(status_code=400, detail=f"Input exceeds max length ({MAX_INPUT_LENGTH} chars)")
 
     try:
         # Convert text to bytes

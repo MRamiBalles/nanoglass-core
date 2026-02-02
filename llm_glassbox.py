@@ -20,6 +20,7 @@ from typing import Optional, Tuple, List, Dict
 
 from nanoglass_probes import main_probe
 from mamba2_ssd import Mamba2Block, Mamba2Config
+from nanoglass import GlassBoxSensor
 
 
 # ==============================================================================
@@ -522,16 +523,9 @@ class CortexGlassBox(nn.Module):
         # [ACTIVATION TRACKING] For auxiliary loss
         self.activation_accumulator = []
         
-        # Register Probes
-        self.apply(self._register_monitors)
-
-    def _register_monitors(self, module):
-        # We can auto-register hooks on interesting layers here if needed
-        pass
-
-        # Register Probes
-        self.apply(self._register_monitors)
-
+        # [INTEGRATION] Unified GlassBox Sensor
+        self.sensor = GlassBoxSensor()
+        
     def _register_monitors(self, module):
         # We can auto-register hooks on interesting layers here if needed
         pass
@@ -553,6 +547,9 @@ class CortexGlassBox(nn.Module):
         
         # Projection to Vocabulary
         logits = self.head(x) # (B, T, vocab_size)
+
+        # [INTEGRATION] Unified Sensor Reading
+        self.sensor.measure(x, logits)
 
         loss = None
         activation_loss = None
