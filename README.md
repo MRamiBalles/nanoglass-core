@@ -95,6 +95,21 @@ The balance between hallucination and truth is the central trade-off of AI align
 
 ---
 
-## 📜 License
+## 🛠️ Troubleshooting
 
+### Python Environment
+Si recibes errores de "Command not found", asegúrate de:
+1. Tener Python 3.10+ instalado.
+2. Añadir Python al PATH de Windows.
+3. Usar `py` o `python3` según tu instalación.
+
+### Web API Connection
+Si el Dashboard no muestra datos reales:
+1. Inicia el API Bridge: `uvicorn webapp.api_bridge:app --reload`
+2. Verifica que el puerto 8000 esté libre.
+3. Revisa los logs de la consola en el navegador para errores de CORS.
+
+---
+
+## 📜 License
 Research/Educational Use. See individual papers for academic attribution.

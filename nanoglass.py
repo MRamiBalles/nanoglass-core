@@ -31,9 +31,21 @@ class NanoConfig:
     min_data_quality: float = 0.8  # Reject data below this quality score
     energy_backtrack_threshold: float = 2.0  # For recursive verification
     
+    dtype: torch.dtype = torch.float32  # Default to float32 for CPU
+    
     @property
     def device(self) -> str:
-        return 'cuda' if torch.cuda.is_available() else 'cpu'
+        if torch.cuda.is_available():
+            return 'cuda'
+        if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            return 'mps'
+        return 'cpu'
+
+    def setup_precision(self):
+        """Optimize precision based on device."""
+        if 'cuda' in self.device:
+            self.dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+        return self.dtype
 
 config = NanoConfig()
 
@@ -203,23 +215,25 @@ class NanoGlass(nn.Module):
             is_idk_target = (target_flat == self.config.idk_token)
             is_idk_predicted = (predicted_tokens == self.config.idk_token)
             
-            # 5. Build the TruthRL weights
-            # Correct answer or correctly abstained on unknown: weight = 1.0 (normal)
-            # Abstained when we should have answered: weight = 0.5 (mild penalty)
-            # Hallucinated on unknown (high confidence wrong): weight = 2.0 (severe penalty)
+            # 5. Build the TruthRL weights with Epistemic Margin
+            # In addition to fixed weights, we scale penalty by confidence
+            # High Confidence + Wrong = Max Penalty (Hallucination)
+            # Low Confidence + Wrong = Lower Penalty (Uncertainty)
             weights = torch.ones_like(ce_loss)
             
-            # Case: Target is [IDK] but model hallucinated (predicted something else with high confidence)
-            hallucination_mask = is_idk_target & ~is_idk_predicted & (confidence > 0.5)
-            weights[hallucination_mask] = 2.0  # Double the penalty
+            # Case: Target is [IDK] but model predicted something else
+            hallucination_mask = is_idk_target & ~is_idk_predicted
+            # EPISTEMIC MARGIN: Penalty scales with confidence.
+            # If the model is wrong but uncertain (confidence low), we penalize less.
+            weights[hallucination_mask] = 1.0 + confidence[hallucination_mask]
             
             # Case: Model said [IDK] when it should have answered (over-abstention)
             over_abstention_mask = ~is_idk_target & is_idk_predicted
-            weights[over_abstention_mask] = 0.5  # Mild penalty for cowardice
+            weights[over_abstention_mask] = 0.5
             
             # Case: Model said [IDK] correctly on unknown (perfect abstention)
             perfect_abstention_mask = is_idk_target & is_idk_predicted
-            weights[perfect_abstention_mask] = 0.1  # Almost no penalty - this is the goal
+            weights[perfect_abstention_mask] = 0.1
             
             # 6. Apply weighted loss
             loss = (ce_loss * weights).mean()
