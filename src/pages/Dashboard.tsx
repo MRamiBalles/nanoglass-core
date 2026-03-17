@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
 import { Zap, Activity, Shield, Brain } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { SparsityChart } from "@/components/dashboard/SparsityChart";
 import { LogTerminal } from "@/components/dashboard/LogTerminal";
+import { SymbolicStateMonitor } from "@/components/dashboard/SymbolicStateMonitor";
 import { GlitchText } from "@/components/effects/GlitchText";
 import { SimulationMode } from "@/components/simulation/SimulationMode";
 
@@ -85,13 +86,20 @@ export default function Dashboard() {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Sparsity Chart - 2/3 width */}
+        {/* Sparsity Chart - takes 2/3 on first row */}
         <div className="lg:col-span-2">
           <SparsityChart />
         </div>
 
-        {/* Log Terminal - 1/3 width */}
-        <div className="lg:col-span-1 min-h-[400px]">
+        {/* Symbolic State Monitor - 1/3 */}
+        <div className="lg:col-span-1">
+          <SymbolicStateMonitor />
+        </div>
+      </div>
+
+      {/* Second Row: Log Terminal full width */}
+      <div className="mt-6">
+        <div className="min-h-[300px]">
           <LogTerminal />
         </div>
       </div>

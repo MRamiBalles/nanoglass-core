@@ -11,6 +11,7 @@ import TrainingPlayground from "./pages/TrainingPlayground";
 import InferenceDemo from "./pages/InferenceDemo";
 import ArchitectureVisualizer from "./pages/ArchitectureVisualizer";
 import ResearchPipeline from "./pages/ResearchPipeline";
+import TruthRLVisualizer from "./pages/TruthRLVisualizer";
 import BioLab from "./pages/labs/BioLab";
 import PhysicsLab from "./pages/labs/PhysicsLab";
 import XenoLab from "./pages/labs/XenoLab";
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/inference" element={<InferenceDemo />} />
               <Route path="/architectures" element={<ArchitectureVisualizer />} />
               <Route path="/pipeline" element={<ResearchPipeline />} />
+              <Route path="/truthrl" element={<TruthRLVisualizer />} />
               <Route path="/labs/bio" element={<BioLab />} />
               <Route path="/labs/physics" element={<PhysicsLab />} />
               <Route path="/labs/xeno" element={<XenoLab />} />
