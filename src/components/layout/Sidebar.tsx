@@ -1,12 +1,16 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, BookOpen, Activity, Brain, Zap, Eye, Lock, ShieldCheck, FlaskConical } from "lucide-react";
+import { LayoutDashboard, BookOpen, Activity, Brain, Zap, Eye, Lock, ShieldCheck, FlaskConical, Play, Layers, GitBranch } from "lucide-react";
 import { motion } from "framer-motion";
 import { useResearchProgress } from "@/hooks/useResearchProgress";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/research", label: "Research Hub", icon: BookOpen },
+  { type: "divider", label: "KARPATHY TOOLS" },
   { to: "/training", label: "Training Lab", icon: FlaskConical },
+  { to: "/inference", label: "Inference Demo", icon: Play },
+  { to: "/architectures", label: "Architectures", icon: Layers },
+  { to: "/pipeline", label: "Research Pipeline", icon: GitBranch },
   { type: "divider", label: "EXPERIMENTAL LABS" },
   { to: "/labs/bio", label: "Bio-Mimetic Lab", icon: Brain },
   { to: "/labs/physics", label: "Physics Lab", icon: Zap },
