@@ -16,31 +16,8 @@ export default function Dashboard() {
     isHallucinating: false
   });
 
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        const response = await fetch("http://localhost:8000/health");
-        const health = await response.json();
-        
-        if (health.status === "ok") {
-          const res = await fetch("http://localhost:8000/metrics");
-          const data = await res.json();
-          if (data.energy_history.length > 0) {
-            setMetrics(prev => ({
-              ...prev,
-              energy: data.energy_history[data.energy_history.length - 1],
-              entropy: data.entropy_history[data.entropy_history.length - 1] || prev.entropy,
-            }));
-          }
-        }
-      } catch (e) {
-        console.log("API Bridge not reachable. Running in simulation mode.");
-      }
-    };
-
-    const interval = setInterval(fetchMetrics, 3000);
-    return () => clearInterval(interval);
-  }, []);
+  // API bridge disabled — running in simulation mode.
+  // To connect a live backend, set VITE_API_URL and uncomment the fetch logic.
 
   return (
     <div className="p-8">
