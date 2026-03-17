@@ -35,10 +35,11 @@ function buildGraph(papers: typeof researchPapers): { nodes: PaperNode[]; hypoth
     const radius = 250 + (i % 3) * 60;
     return {
       ...p,
+      focus: p.focus || "",
       status: p.status as "verified" | "theory",
       x: 400 + Math.cos(angle) * radius,
       y: 350 + Math.sin(angle) * radius,
-      connections: [],
+      connections: [] as string[],
     };
   });
 
