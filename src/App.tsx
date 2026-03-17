@@ -34,6 +34,7 @@ const App = () => (
               <Route path="/inference" element={<InferenceDemo />} />
               <Route path="/architectures" element={<ArchitectureVisualizer />} />
               <Route path="/pipeline" element={<ResearchPipeline />} />
+              <Route path="/truthrl" element={<TruthRLVisualizer />} />
               <Route path="/labs/bio" element={<BioLab />} />
               <Route path="/labs/physics" element={<PhysicsLab />} />
               <Route path="/labs/xeno" element={<XenoLab />} />
