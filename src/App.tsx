@@ -7,6 +7,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import Dashboard from "./pages/Dashboard";
 import ResearchHub from "./pages/ResearchHub";
+import TrainingPlayground from "./pages/TrainingPlayground";
 import BioLab from "./pages/labs/BioLab";
 import PhysicsLab from "./pages/labs/PhysicsLab";
 import XenoLab from "./pages/labs/XenoLab";
