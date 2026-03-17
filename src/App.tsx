@@ -11,6 +11,7 @@ import TrainingPlayground from "./pages/TrainingPlayground";
 import InferenceDemo from "./pages/InferenceDemo";
 import ArchitectureVisualizer from "./pages/ArchitectureVisualizer";
 import ResearchPipeline from "./pages/ResearchPipeline";
+import TruthRLVisualizer from "./pages/TruthRLVisualizer";
 import BioLab from "./pages/labs/BioLab";
 import PhysicsLab from "./pages/labs/PhysicsLab";
 import XenoLab from "./pages/labs/XenoLab";
