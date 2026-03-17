@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
 import { Zap, Activity, Shield, Brain } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { SparsityChart } from "@/components/dashboard/SparsityChart";
 import { LogTerminal } from "@/components/dashboard/LogTerminal";
+import { SymbolicStateMonitor } from "@/components/dashboard/SymbolicStateMonitor";
 import { GlitchText } from "@/components/effects/GlitchText";
 import { SimulationMode } from "@/components/simulation/SimulationMode";
 
