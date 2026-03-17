@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, BookOpen, Activity, Brain, Zap, Eye, Lock, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, BookOpen, Activity, Brain, Zap, Eye, Lock, ShieldCheck, FlaskConical } from "lucide-react";
 import { motion } from "framer-motion";
 import { useResearchProgress } from "@/hooks/useResearchProgress";
 
