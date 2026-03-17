@@ -6,6 +6,7 @@ import { useResearchProgress } from "@/hooks/useResearchProgress";
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/research", label: "Research Hub", icon: BookOpen },
+  { to: "/training", label: "Training Lab", icon: FlaskConical },
   { type: "divider", label: "EXPERIMENTAL LABS" },
   { to: "/labs/bio", label: "Bio-Mimetic Lab", icon: Brain },
   { to: "/labs/physics", label: "Physics Lab", icon: Zap },
